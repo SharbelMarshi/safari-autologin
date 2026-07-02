@@ -103,10 +103,15 @@ p {
 .status,
 .rule-meta,
 .rule-status,
-.switch-row small {
+.switch-row small,
+.field-help {
   color: var(--secondary-text);
   font-size: 0.7rem;
   line-height: 1.4;
+}
+
+.field-help {
+  font-weight: 400;
 }
 
 .hostname {

@@ -35,10 +35,15 @@ function getDefaultSiteRule(hostname) {
       { id: 'username', label: 'Username or email', value: '', type: 'text' },
       { id: 'password', label: 'Password', value: '', type: 'password' }
     ],
+    loginPagePath: '',
     autoFill: false,
     autoSubmit: false,
     updatedAt: new Date().toISOString()
   };
+}
+
+function normalizeLoginPagePath(path) {
+  return String(path || '').trim();
 }
 
 function sanitizeFields(fields) {
@@ -80,7 +85,8 @@ function normalizeSiteRule(hostname, rule) {
     ...fallback,
     ...rule,
     hostname,
-    fields
+    fields,
+    loginPagePath: normalizeLoginPagePath(rule.loginPagePath)
   };
 }
 
@@ -234,6 +240,7 @@ browserApi.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
         const saved = await saveSite(hostname, {
           fields: sanitizeFields(message.fields),
+          loginPagePath: normalizeLoginPagePath(message.loginPagePath),
           autoFill: Boolean(message.autoFill),
           autoSubmit: Boolean(message.autoSubmit)
         });

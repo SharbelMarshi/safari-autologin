@@ -2,6 +2,7 @@ const browserApi = globalThis.browser || globalThis.chrome;
 
 const hostnameEl = document.getElementById('hostname');
 const fieldListEl = document.getElementById('fieldList');
+const loginPagePathInput = document.getElementById('loginPagePath');
 const autoFillInput = document.getElementById('autoFill');
 const autoSubmitInput = document.getElementById('autoSubmit');
 const statusEl = document.getElementById('status');
@@ -30,6 +31,18 @@ function tryGetHostname(url) {
   }
 }
 
+function tryGetPathname(url) {
+  if (!url) {
+    return '';
+  }
+
+  try {
+    return new URL(url).pathname || '/';
+  } catch (_error) {
+    return '';
+  }
+}
+
 async function getCurrentHostInfo() {
   if (currentContextPromise) {
     return currentContextPromise;
@@ -38,8 +51,9 @@ async function getCurrentHostInfo() {
   currentContextPromise = browserApi.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
     const currentTab = tabs[0] || null;
     const hostname = tryGetHostname(currentTab?.url);
+    const pathname = tryGetPathname(currentTab?.url);
     perfLog('current tab resolved', hostname);
-    return { hostname, tabId: currentTab?.id || null };
+    return { hostname, pathname, tabId: currentTab?.id || null };
   });
 
   return currentContextPromise;
@@ -159,7 +173,9 @@ function addManualField() {
 
 async function populateFromRule(hostname) {
   const [rule, detectedFields] = await Promise.all([loadRule(hostname), detectSiteFields()]);
+  const { pathname } = await getCurrentHostInfo();
   currentFields = mergeDetectedFields(detectedFields, rule?.fields);
+  loginPagePathInput.value = rule ? rule.loginPagePath || '' : pathname || '';
   autoFillInput.checked = Boolean(rule?.autoFill);
   autoSubmitInput.checked = Boolean(rule?.autoSubmit);
   renderFields();
@@ -171,6 +187,7 @@ async function saveRule() {
     type: 'SAVE_SITE_RULE',
     hostname,
     fields: collectFields(),
+    loginPagePath: loginPagePathInput.value,
     autoFill: autoFillInput.checked,
     autoSubmit: autoSubmitInput.checked
   });

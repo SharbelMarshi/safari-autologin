@@ -98,6 +98,28 @@ function collectFields(card) {
   }));
 }
 
+function createLoginPagePathField(value) {
+  const field = document.createElement('label');
+  field.className = 'field-group';
+
+  const label = document.createElement('span');
+  label.className = 'field-label';
+  label.textContent = 'Login page path';
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'rule-login-page-path';
+  input.value = value || '';
+  input.placeholder = '/login';
+
+  const helper = document.createElement('small');
+  helper.className = 'field-help';
+  helper.textContent = 'Only auto-fill on this path. Leave blank to fall back to login-page detection.';
+
+  field.append(label, input, helper);
+  return field;
+}
+
 function addFieldToCard(card) {
   const fieldsWrap = card.querySelector('.rule-fields');
   const currentCount = fieldsWrap.querySelectorAll('.rule-dynamic-field').length;
@@ -124,12 +146,14 @@ function addFieldToCard(card) {
 async function saveRule(hostname, card) {
   const autoFill = card.querySelector('.rule-autofill').checked;
   const autoSubmit = card.querySelector('.rule-autosubmit').checked;
+  const loginPagePath = card.querySelector('.rule-login-page-path').value;
   const status = card.querySelector('.rule-status');
 
   const response = await browserApi.runtime.sendMessage({
     type: 'SAVE_SITE_RULE',
     hostname,
     fields: collectFields(card),
+    loginPagePath,
     autoFill,
     autoSubmit
   });
@@ -195,6 +219,8 @@ async function loadRules() {
       fieldsWrap.appendChild(createCredentialField(field, index));
     });
 
+    const loginPagePathField = createLoginPagePathField(rule.loginPagePath);
+
     const addFieldButton = document.createElement('button');
     addFieldButton.className = 'secondary add-field-button';
     addFieldButton.textContent = '+ Add Another Field';
@@ -225,7 +251,7 @@ async function loadRules() {
     });
 
     footer.append(saveButton, deleteButton);
-    row.append(header, fieldsWrap, addFieldButton, autoFillToggle, autoSubmitToggle, footer, status);
+    row.append(header, fieldsWrap, addFieldButton, loginPagePathField, autoFillToggle, autoSubmitToggle, footer, status);
     rulesEl.appendChild(row);
   });
 }

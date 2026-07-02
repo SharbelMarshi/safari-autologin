@@ -1,9 +1,6 @@
-//
 //  AppDelegate.swift
 //  AutoLogin
-//
 //  Created by sharbel marshi on 02/07/2026.
-//
 
 import Cocoa
 

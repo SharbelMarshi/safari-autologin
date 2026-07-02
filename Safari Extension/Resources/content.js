@@ -330,6 +330,67 @@ function detectAmbiguousForms() {
   }).length > 1;
 }
 
+function getVisiblePasswordFields(scope) {
+  return Array.from(scope.querySelectorAll('input[type="password"], input[autocomplete="current-password"], input[autocomplete="password"]')).filter(
+    (field) => isFillableField(field)
+  );
+}
+
+function getLoginTextSignal(scope) {
+  const action = scope instanceof HTMLFormElement ? scope.getAttribute('action') || '' : '';
+  const text = [window.location.pathname, document.title, document.body?.innerText || '', action].join(' ').toLowerCase();
+  return /login|log in|sign in|signin|auth|כניסה|התחבר|התחברות/.test(text);
+}
+
+function pageLooksLikeLoginPage() {
+  const forms = Array.from(document.querySelectorAll('form'));
+
+  const formLooksLikeLogin = forms.some((form) => {
+    const candidateFields = getCandidateFields(form);
+    const passwordFields = candidateFields.filter((field) => inferFieldType(field) === 'password');
+    const textFields = candidateFields.filter((field) => inferFieldType(field) !== 'password');
+    const hasLoginAutocomplete =
+      Boolean(form.querySelector('input[autocomplete="username"]')) && Boolean(form.querySelector('input[autocomplete="current-password"]'));
+
+    if (passwordFields.length === 1 && textFields.length >= 1) {
+      return true;
+    }
+
+    return hasLoginAutocomplete && getLoginTextSignal(form);
+  });
+
+  if (formLooksLikeLogin) {
+    return true;
+  }
+
+  const pagePasswordFields = getVisiblePasswordFields(document);
+  const pageTextFields = getCandidateFields(document).filter((field) => inferFieldType(field) !== 'password');
+  return pagePasswordFields.length === 1 && pageTextFields.length >= 1 && getLoginTextSignal(document);
+}
+
+function normalizePathname(pathname) {
+  const value = String(pathname || '').trim();
+  if (!value) {
+    return '';
+  }
+
+  if (value.startsWith('/')) {
+    return value;
+  }
+
+  return `/${value}`;
+}
+
+function shouldAttemptAutoFill(rule) {
+  const savedLoginPagePath = normalizePathname(rule?.loginPagePath);
+
+  if (savedLoginPagePath) {
+    return normalizePathname(window.location.pathname) === savedLoginPagePath;
+  }
+
+  return pageLooksLikeLoginPage();
+}
+
 function normalizeIncomingFields(payload) {
   const fields = Array.isArray(payload?.fields) ? payload.fields : [];
 
@@ -456,6 +517,11 @@ async function autoFillIfEnabled() {
   const rule = await getCachedRule(hostname);
   if (!rule?.autoFill) {
     return { attempted: false, success: false };
+  }
+
+  if (!shouldAttemptAutoFill(rule)) {
+    perfLog('skipping autofill on non-login page');
+    return { attempted: false, success: false, skipped: true };
   }
 
   perfLog('first fill attempt');
