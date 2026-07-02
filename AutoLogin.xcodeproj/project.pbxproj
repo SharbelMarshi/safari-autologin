@@ -66,22 +66,22 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		A95005A72FF5CEEF00FC2183 /* AutoLogin */ = {
+		A95005A72FF5CEEF00FC2183 /* macOS App */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = AutoLogin;
+			path = "macOS App";
 			sourceTree = "<group>";
 		};
-		A95005C22FF5CEF000FC2183 /* AutoLoginTests */ = {
+		A95005C22FF5CEF000FC2183 /* macOS App Tests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = AutoLoginTests;
+			path = "macOS App Tests";
 			sourceTree = "<group>";
 		};
-		A95005CC2FF5CEF000FC2183 /* AutoLoginUITests */ = {
+		A95005CC2FF5CEF000FC2183 /* macOS App UI Tests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = AutoLoginUITests;
+			path = "macOS App UI Tests";
 			sourceTree = "<group>";
 		};
-		A95005D92FF5CEF000FC2183 /* AutoLogin Extension */ = {
+		A95005D92FF5CEF000FC2183 /* Safari Extension */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				A95005EE2FF5CEF000FC2183 /* Exceptions for "AutoLogin Extension" folder in "AutoLogin Extension" target */,
@@ -90,7 +90,7 @@
 				Resources/_locales,
 				Resources/images,
 			);
-			path = "AutoLogin Extension";
+			path = "Safari Extension";
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -130,10 +130,10 @@
 		A950059C2FF5CEEF00FC2183 = {
 			isa = PBXGroup;
 			children = (
-				A95005A72FF5CEEF00FC2183 /* AutoLogin */,
-				A95005C22FF5CEF000FC2183 /* AutoLoginTests */,
-				A95005CC2FF5CEF000FC2183 /* AutoLoginUITests */,
-				A95005D92FF5CEF000FC2183 /* AutoLogin Extension */,
+				A95005A72FF5CEEF00FC2183 /* macOS App */,
+				A95005C22FF5CEF000FC2183 /* macOS App Tests */,
+				A95005CC2FF5CEF000FC2183 /* macOS App UI Tests */,
+				A95005D92FF5CEF000FC2183 /* Safari Extension */,
 				A95005A62FF5CEEF00FC2183 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -167,7 +167,7 @@
 				A95005D82FF5CEF000FC2183 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				A95005A72FF5CEEF00FC2183 /* AutoLogin */,
+				A95005A72FF5CEEF00FC2183 /* macOS App */,
 			);
 			name = AutoLogin;
 			packageProductDependencies = (
@@ -190,7 +190,7 @@
 				A95005C12FF5CEF000FC2183 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				A95005C22FF5CEF000FC2183 /* AutoLoginTests */,
+				A95005C22FF5CEF000FC2183 /* macOS App Tests */,
 			);
 			name = AutoLoginTests;
 			packageProductDependencies = (
@@ -213,7 +213,7 @@
 				A95005CB2FF5CEF000FC2183 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				A95005CC2FF5CEF000FC2183 /* AutoLoginUITests */,
+				A95005CC2FF5CEF000FC2183 /* macOS App UI Tests */,
 			);
 			name = AutoLoginUITests;
 			packageProductDependencies = (
@@ -235,7 +235,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				A95005D92FF5CEF000FC2183 /* AutoLogin Extension */,
+				A95005D92FF5CEF000FC2183 /* Safari Extension */,
 			);
 			name = "AutoLogin Extension";
 			packageProductDependencies = (
@@ -383,7 +383,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "AutoLogin Extension/Info.plist";
+				INFOPLIST_FILE = "Safari Extension/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "AutoLogin Extension";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -418,7 +418,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "AutoLogin Extension/Info.plist";
+				INFOPLIST_FILE = "Safari Extension/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "AutoLogin Extension";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
