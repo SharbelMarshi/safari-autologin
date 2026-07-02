@@ -1,11 +1,54 @@
 <!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <link rel="stylesheet" href="popup.css">
-    <script type="module" src="popup.js"></script>
-</head>
-<body>
-    <strong>Hello World!</strong>
-</body>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AutoLogin</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="popup">
+      <section class="hero-card">
+        <div class="hero-copy">
+          <p class="eyebrow">AutoLogin</p>
+          <h1>Quick Fill</h1>
+        </div>
+        <p id="hostname" class="hostname">loading…</p>
+      </section>
+
+      <section class="panel">
+        <div id="fieldList" class="field-list"></div>
+        <button id="addField" class="secondary add-field-button" type="button">+ Add Another Field</button>
+      </section>
+
+      <section class="panel">
+        <label class="switch-row">
+          <span>
+            <strong>Auto-fill</strong>
+            <small>Use saved credentials when this page loads.</small>
+          </span>
+          <input id="autoFill" type="checkbox" />
+        </label>
+
+        <label class="switch-row">
+          <span>
+            <strong>Auto-submit</strong>
+            <small>Only after both fields are filled safely.</small>
+          </span>
+          <input id="autoSubmit" type="checkbox" />
+        </label>
+      </section>
+
+      <div class="actions actions-pill">
+        <button id="save">Save for This Site</button>
+        <button id="fill" class="secondary">Fill Now</button>
+      </div>
+
+      <section class="footer-note">
+        <p class="warning">Keyboard shortcut: customize it in Safari Extensions settings.</p>
+        <p id="status" class="status">Ready.</p>
+      </section>
+    </main>
+    <script src="popup.js"></script>
+  </body>
 </html>

@@ -1,0 +1,350 @@
+:root {
+  color-scheme: light dark;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif;
+  --page-bg: linear-gradient(180deg, rgba(251, 252, 255, 0.98), rgba(242, 245, 251, 0.98));
+  --surface-bg: rgba(255, 255, 255, 0.6);
+  --surface-strong: rgba(255, 255, 255, 0.78);
+  --surface-border: rgba(60, 60, 67, 0.08);
+  --secondary-text: rgba(60, 60, 67, 0.7);
+  --tertiary-text: rgba(60, 60, 67, 0.46);
+  --field-bg: rgba(255, 255, 255, 0.72);
+  --field-border: rgba(60, 60, 67, 0.1);
+  --accent: #007aff;
+  --accent-strong: #0061d0;
+  --danger: #ff3b30;
+  --shadow: 0 16px 40px rgba(28, 37, 54, 0.06);
+  --inset-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  --button-shadow: 0 10px 24px rgba(255, 255, 255, 0.2), 0 6px 16px rgba(0, 122, 255, 0.14);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  padding: 12px;
+  background: var(--page-bg);
+  color: CanvasText;
+  font-size: 12px;
+}
+
+.popup,
+.options {
+  display: grid;
+  gap: 12px;
+}
+
+.popup {
+  min-width: 274px;
+  max-width: 320px;
+  gap: 8px;
+}
+
+.options {
+  max-width: 880px;
+  margin: 0 auto;
+  gap: 14px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 1.02rem;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+p {
+  margin: 0;
+}
+
+.eyebrow {
+  margin-bottom: 2px;
+  font-size: 0.54rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--secondary-text);
+}
+
+.hero-card,
+.panel,
+.rule-card,
+.empty-state,
+.actions-pill,
+.optionsStatusShell {
+  background: var(--surface-bg);
+  border: 1px solid var(--surface-border);
+  border-radius: 16px;
+  backdrop-filter: blur(24px);
+  box-shadow: var(--shadow);
+  box-shadow: var(--inset-shadow), var(--shadow);
+}
+
+.hero-card,
+.panel,
+.empty-state {
+  padding: 12px;
+}
+
+.hero-card {
+  display: grid;
+  gap: 8px;
+  background:
+    radial-gradient(circle at top left, rgba(0, 122, 255, 0.07), transparent 44%),
+    radial-gradient(circle at bottom right, rgba(90, 200, 250, 0.08), transparent 38%),
+    var(--surface-strong);
+}
+
+.hero-copy {
+  display: grid;
+  gap: 1px;
+}
+
+.hostname,
+.warning,
+.status,
+.rule-meta,
+.rule-status,
+.switch-row small {
+  color: var(--secondary-text);
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+
+.hostname {
+  color: var(--tertiary-text);
+  font-size: 0.72rem;
+}
+
+.panel {
+  display: grid;
+  gap: 9px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.field-list,
+.rule-fields {
+  display: grid;
+  gap: 9px;
+}
+
+.field-group {
+  display: grid;
+  gap: 4px;
+}
+
+.field-label,
+label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--secondary-text);
+}
+
+input,
+button {
+  box-sizing: border-box;
+  font: inherit;
+}
+
+input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--field-border);
+  border-radius: 10px;
+  background: var(--field-bg);
+  color: CanvasText;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.58);
+  font-size: 0.76rem;
+}
+
+input:focus {
+  outline: 2px solid color-mix(in srgb, var(--accent) 35%, white);
+  outline-offset: 1px;
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--field-border));
+}
+
+button {
+  padding: 8px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.16)),
+    linear-gradient(180deg, rgba(10, 132, 255, 0.88), rgba(0, 97, 208, 0.82));
+  color: white;
+  cursor: pointer;
+  font-weight: 600;
+  box-shadow: var(--button-shadow);
+  font-size: 0.76rem;
+  letter-spacing: -0.01em;
+  backdrop-filter: blur(18px);
+}
+
+button.secondary {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.24)),
+    rgba(255, 255, 255, 0.28);
+  border-color: rgba(255, 255, 255, 0.48);
+  color: CanvasText;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.62), 0 6px 16px rgba(28, 37, 54, 0.06);
+}
+
+button.danger {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.16)),
+    linear-gradient(180deg, rgba(255, 99, 90, 0.66), rgba(255, 59, 48, 0.52));
+  color: #b42318;
+  border-color: rgba(255, 255, 255, 0.44);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.52), 0 6px 16px rgba(255, 59, 48, 0.08);
+}
+
+button:hover {
+  filter: brightness(1.02);
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+.actions {
+  display: flex;
+  gap: 6px;
+}
+
+.actions button,
+.rule-actions button {
+  flex: 1;
+}
+
+.actions-pill {
+  padding: 2px;
+  border-radius: 14px;
+}
+
+.actions-pill button {
+  min-height: 34px;
+}
+
+.header-actions {
+  display: grid;
+  gap: 8px;
+  justify-items: end;
+}
+
+.add-field-button {
+  width: 100%;
+}
+
+.switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 9px;
+}
+
+.switch-row span {
+  display: grid;
+  gap: 2px;
+}
+
+.switch-row strong {
+  font-size: 0.72rem;
+  line-height: 1.15;
+}
+
+.switch-row input {
+  width: 30px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.footer-note {
+  display: grid;
+  gap: 3px;
+  padding: 0 2px;
+}
+
+.status-error {
+  color: #b42318;
+}
+
+.rule-card {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+}
+
+.rule-header {
+  display: grid;
+  gap: 4px;
+}
+
+.rule-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.rule-actions,
+.rules-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.rules-grid {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.empty-state {
+  text-align: center;
+}
+
+#optionsStatus {
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.52);
+  border: 1px solid rgba(60, 60, 67, 0.08);
+  border-radius: 14px;
+  backdrop-filter: blur(20px);
+}
+
+.empty-state h2 {
+  margin: 0 0 6px;
+  font-size: 1.1rem;
+}
+
+.hidden {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --page-bg: linear-gradient(180deg, rgba(24, 25, 28, 0.98), rgba(18, 19, 22, 0.98));
+    --surface-bg: rgba(36, 37, 41, 0.54);
+    --surface-strong: rgba(40, 41, 45, 0.72);
+    --surface-border: rgba(255, 255, 255, 0.08);
+    --secondary-text: rgba(235, 235, 245, 0.72);
+    --tertiary-text: rgba(235, 235, 245, 0.5);
+    --field-bg: rgba(58, 58, 61, 0.88);
+    --field-border: rgba(255, 255, 255, 0.12);
+    --shadow: 0 18px 36px rgba(0, 0, 0, 0.22);
+    --inset-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    --button-shadow: 0 8px 18px rgba(0, 122, 255, 0.16);
+  }
+
+  button.secondary {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.06)),
+      rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.92);
+  }
+
+  button.danger {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04)),
+      linear-gradient(180deg, rgba(255, 89, 79, 0.44), rgba(255, 69, 58, 0.32));
+    color: #ffb4ae;
+  }
+
+  #optionsStatus {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+}

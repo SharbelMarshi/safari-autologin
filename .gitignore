@@ -1,0 +1,28 @@
+# macOS
+.DS_Store
+
+# Xcode
+DerivedData/
+build/
+*.xcuserstate
+xcuserdata/
+*.moved-aside
+*.xccheckout
+*.xcscmblueprint
+
+# Build products
+*.app
+*.appex
+*.dSYM
+*.ipa
+
+# Archives
+*.zip
+
+# Secrets / signing
+.env
+*.key
+*.p8
+*.mobileprovision
+*.cer
+*.p12

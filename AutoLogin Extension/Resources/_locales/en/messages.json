@@ -4,7 +4,7 @@
         "description": "The display name for the extension."
     },
     "extension_description": {
-        "message": "This is AutoLogin Extension. You should tell us what your extension does here.",
+        "message": "A transparent, user-controlled autofill helper for login forms.",
         "description": "Description of what the extension does."
     }
 }
