@@ -1,9 +1,6 @@
-//
 //  AutoLoginTests.swift
 //  AutoLoginTests
-//
 //  Created by sharbel marshi on 02/07/2026.
-//
 
 import Testing
 @testable import AutoLogin

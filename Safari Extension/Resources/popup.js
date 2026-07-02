@@ -1,11 +1,8 @@
 const browserApi = globalThis.browser || globalThis.chrome;
 
-const hostnameEl = document.getElementById('hostname');
 const fieldListEl = document.getElementById('fieldList');
-const loginPagePathInput = document.getElementById('loginPagePath');
 const autoFillInput = document.getElementById('autoFill');
 const autoSubmitInput = document.getElementById('autoSubmit');
-const statusEl = document.getElementById('status');
 const addFieldButton = document.getElementById('addField');
 const DEBUG_PERFORMANCE = false;
 
@@ -31,18 +28,6 @@ function tryGetHostname(url) {
   }
 }
 
-function tryGetPathname(url) {
-  if (!url) {
-    return '';
-  }
-
-  try {
-    return new URL(url).pathname || '/';
-  } catch (_error) {
-    return '';
-  }
-}
-
 async function getCurrentHostInfo() {
   if (currentContextPromise) {
     return currentContextPromise;
@@ -51,9 +36,8 @@ async function getCurrentHostInfo() {
   currentContextPromise = browserApi.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
     const currentTab = tabs[0] || null;
     const hostname = tryGetHostname(currentTab?.url);
-    const pathname = tryGetPathname(currentTab?.url);
     perfLog('current tab resolved', hostname);
-    return { hostname, pathname, tabId: currentTab?.id || null };
+    return { hostname, tabId: currentTab?.id || null };
   });
 
   return currentContextPromise;
@@ -173,9 +157,7 @@ function addManualField() {
 
 async function populateFromRule(hostname) {
   const [rule, detectedFields] = await Promise.all([loadRule(hostname), detectSiteFields()]);
-  const { pathname } = await getCurrentHostInfo();
   currentFields = mergeDetectedFields(detectedFields, rule?.fields);
-  loginPagePathInput.value = rule ? rule.loginPagePath || '' : pathname || '';
   autoFillInput.checked = Boolean(rule?.autoFill);
   autoSubmitInput.checked = Boolean(rule?.autoSubmit);
   renderFields();
@@ -183,39 +165,22 @@ async function populateFromRule(hostname) {
 
 async function saveRule() {
   const { hostname } = await getCurrentHostInfo();
-  const response = await browserApi.runtime.sendMessage({
+  await browserApi.runtime.sendMessage({
     type: 'SAVE_SITE_RULE',
     hostname,
     fields: collectFields(),
-    loginPagePath: loginPagePathInput.value,
+    loginPagePath: '',
     autoFill: autoFillInput.checked,
     autoSubmit: autoSubmitInput.checked
   });
-  statusEl.textContent = response?.message || 'Saved.';
-}
-
-async function fillNow() {
-  const { tabId } = await getCurrentHostInfo();
-  const response = await browserApi.runtime.sendMessage({
-    type: 'FILL_NOW',
-    tabId,
-    payload: {
-      fields: collectFields(),
-      autoSubmit: autoSubmitInput.checked
-    }
-  });
-  statusEl.textContent = response?.message || 'Filled.';
 }
 
 async function init() {
   currentFields = defaultFields();
   renderFields();
-  statusEl.textContent = 'Loading…';
 
   const { hostname } = await getCurrentHostInfo();
-  hostnameEl.textContent = hostname === 'unknown' ? 'Current site unavailable' : `Site: ${hostname}`;
   await populateFromRule(hostname);
-  statusEl.textContent = 'Ready.';
 }
 
 browserApi.storage.onChanged.addListener(async (changes, areaName) => {
@@ -225,10 +190,8 @@ browserApi.storage.onChanged.addListener(async (changes, areaName) => {
 
   const { hostname } = await getCurrentHostInfo();
   await populateFromRule(hostname);
-  statusEl.textContent = 'Updated from saved data.';
 });
 
 document.getElementById('save').addEventListener('click', saveRule);
-document.getElementById('fill').addEventListener('click', fillNow);
 addFieldButton.addEventListener('click', addManualField);
 document.addEventListener('DOMContentLoaded', init);

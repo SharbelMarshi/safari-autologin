@@ -310,7 +310,3 @@ browserApi.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   return true;
 });
-
-browserApi.runtime.onInstalled.addListener(() => {
-  // Production credentials should eventually be moved to the macOS Keychain via the native app.
-});

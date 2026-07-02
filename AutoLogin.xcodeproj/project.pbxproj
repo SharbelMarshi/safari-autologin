@@ -56,7 +56,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		A95005EE2FF5CEF000FC2183 /* Exceptions for "AutoLogin Extension" folder in "AutoLogin Extension" target */ = {
+		A95005EE2FF5CEF000FC2183 /* Exceptions for "Safari Extension" folder in "AutoLogin Extension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -84,7 +84,7 @@
 		A95005D92FF5CEF000FC2183 /* Safari Extension */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				A95005EE2FF5CEF000FC2183 /* Exceptions for "AutoLogin Extension" folder in "AutoLogin Extension" target */,
+				A95005EE2FF5CEF000FC2183 /* Exceptions for "Safari Extension" folder in "AutoLogin Extension" target */,
 			);
 			explicitFolders = (
 				Resources/_locales,

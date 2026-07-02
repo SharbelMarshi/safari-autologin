@@ -1,10 +1,3 @@
-//
-//  SafariWebExtensionHandler.swift
-//  AutoLogin Extension
-//
-//  Created by sharbel marshi on 02/07/2026.
-//
-
 import SafariServices
 import os.log
 

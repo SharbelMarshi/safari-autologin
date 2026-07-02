@@ -1,12 +1,33 @@
 const browserApi = globalThis.browser || globalThis.chrome;
-const rulesEl = document.getElementById('rules');
+const siteListEl = document.getElementById('siteList');
 const emptyStateEl = document.getElementById('emptyState');
 const optionsStatusEl = document.getElementById('optionsStatus');
+const editorPanelEl = document.getElementById('editorPanel');
+const editorTitleEl = document.getElementById('editorTitle');
+const editorFieldsEl = document.getElementById('editorFields');
+const editorAutoFillEl = document.getElementById('editorAutoFill');
+const editorAutoSubmitEl = document.getElementById('editorAutoSubmit');
+const editorStatusEl = document.getElementById('editorStatus');
+
+let currentRules = {};
+let currentHostname = null;
+let currentFields = [];
 
 function setOptionsStatus(message, isError = false) {
   optionsStatusEl.textContent = message;
   optionsStatusEl.classList.remove('hidden');
   optionsStatusEl.classList.toggle('status-error', isError);
+}
+
+function clearOptionsStatus() {
+  optionsStatusEl.textContent = '';
+  optionsStatusEl.classList.add('hidden');
+  optionsStatusEl.classList.remove('status-error');
+}
+
+function setEditorStatus(message, isError = false) {
+  editorStatusEl.textContent = message;
+  editorStatusEl.classList.toggle('status-error', isError);
 }
 
 function normalizeFields(fields, rule) {
@@ -25,23 +46,6 @@ function normalizeFields(fields, rule) {
     { id: 'username', label: 'Username or email', value: rule?.username || '', type: 'text', meaning: 'username', position: '' },
     { id: 'password', label: 'Password', value: rule?.password || '', type: 'password', meaning: 'password', position: '' }
   ];
-}
-
-function createField(labelText, className, value, type = 'text') {
-  const field = document.createElement('label');
-  field.className = 'field-group';
-
-  const label = document.createElement('span');
-  label.className = 'field-label';
-  label.textContent = labelText;
-
-  const input = document.createElement('input');
-  input.type = type;
-  input.className = className;
-  input.value = value;
-
-  field.append(label, input);
-  return field;
 }
 
 function createToggle(labelText, helperText, className, checked) {
@@ -64,203 +68,204 @@ function createToggle(labelText, helperText, className, checked) {
   return label;
 }
 
-function createCredentialField(field, index) {
-  const wrapper = document.createElement('label');
-  wrapper.className = 'field-group';
-  wrapper.dataset.fieldIndex = String(index);
+function renderEditorFields() {
+  editorFieldsEl.innerHTML = '';
 
-  const label = document.createElement('span');
-  label.className = 'field-label';
-  label.textContent = field.label;
+  currentFields.forEach((field, index) => {
+    const wrapper = document.createElement('label');
+    wrapper.className = 'field-group';
 
-  const input = document.createElement('input');
-  input.type = field.type;
-  input.className = 'rule-dynamic-field';
-  input.value = field.value || '';
-  input.dataset.fieldId = field.id;
-  input.dataset.fieldType = field.type;
-  input.dataset.fieldLabel = field.label;
-  input.dataset.fieldMeaning = field.meaning || '';
-  input.dataset.fieldPosition = field.position || '';
+    const label = document.createElement('span');
+    label.className = 'field-label';
+    label.textContent = field.label;
 
-  wrapper.append(label, input);
-  return wrapper;
+    const input = document.createElement('input');
+    input.type = field.type;
+    input.value = field.value || '';
+    input.addEventListener('input', (event) => {
+      currentFields[index].value = event.target.value;
+    });
+
+    wrapper.append(label, input);
+    editorFieldsEl.appendChild(wrapper);
+  });
 }
 
-function collectFields(card) {
-  return Array.from(card.querySelectorAll('.rule-dynamic-field')).map((input, index) => ({
-    id: input.dataset.fieldId || `field-${index + 1}`,
-    label: input.dataset.fieldLabel || `Field ${index + 1}`,
-    value: input.value,
-    type: input.dataset.fieldType === 'password' ? 'password' : 'text',
-    meaning: input.dataset.fieldMeaning || `text-${index + 1}`,
-    position: input.dataset.fieldPosition || ''
+function collectFields() {
+  return currentFields.map((field) => ({
+    id: field.id,
+    label: field.label,
+    value: field.value || '',
+    type: field.type,
+    meaning: field.meaning,
+    position: field.position
   }));
 }
 
-function createLoginPagePathField(value) {
-  const field = document.createElement('label');
-  field.className = 'field-group';
+function addFieldToEditor() {
+  const nextIndex = currentFields.length + 1;
+  const passwordIndex = currentFields.findIndex((field) => field.type === 'password');
+  const newField = {
+    id: `field-${nextIndex}`,
+    label: `Additional field ${nextIndex - 1}`,
+    value: '',
+    type: 'text',
+    meaning: `text-${nextIndex}`,
+    position: ''
+  };
 
-  const label = document.createElement('span');
-  label.className = 'field-label';
-  label.textContent = 'Login page path';
-
-  const input = document.createElement('input');
-  input.type = 'text';
-  input.className = 'rule-login-page-path';
-  input.value = value || '';
-  input.placeholder = '/login';
-
-  const helper = document.createElement('small');
-  helper.className = 'field-help';
-  helper.textContent = 'Only auto-fill on this path. Leave blank to fall back to login-page detection.';
-
-  field.append(label, input, helper);
-  return field;
-}
-
-function addFieldToCard(card) {
-  const fieldsWrap = card.querySelector('.rule-fields');
-  const currentCount = fieldsWrap.querySelectorAll('.rule-dynamic-field').length;
-  const passwordField = fieldsWrap.querySelector('[data-field-type="password"]')?.closest('.field-group');
-  const newField = createCredentialField(
-    {
-      id: `field-${currentCount + 1}`,
-      label: `Additional field ${currentCount}`,
-      value: '',
-      type: 'text',
-      meaning: `text-${currentCount + 1}`,
-      position: ''
-    },
-    currentCount
-  );
-
-  if (passwordField) {
-    fieldsWrap.insertBefore(newField, passwordField);
+  if (passwordIndex >= 0) {
+    currentFields.splice(passwordIndex, 0, newField);
   } else {
-    fieldsWrap.appendChild(newField);
+    currentFields.push(newField);
   }
+
+  renderEditorFields();
 }
 
-async function saveRule(hostname, card) {
-  const autoFill = card.querySelector('.rule-autofill').checked;
-  const autoSubmit = card.querySelector('.rule-autosubmit').checked;
-  const loginPagePath = card.querySelector('.rule-login-page-path').value;
-  const status = card.querySelector('.rule-status');
+function closeEditor() {
+  currentHostname = null;
+  currentFields = [];
+  editorPanelEl.classList.add('hidden');
+  setEditorStatus('', false);
+}
+
+function openEditor(hostname) {
+  if (currentHostname === hostname && !editorPanelEl.classList.contains('hidden')) {
+    closeEditor();
+    return;
+  }
+
+  const rule = currentRules[hostname];
+  if (!rule) {
+    return;
+  }
+
+  currentHostname = hostname;
+  currentFields = normalizeFields(rule.fields, rule);
+  editorTitleEl.textContent = hostname;
+  editorAutoFillEl.checked = Boolean(rule.autoFill);
+  editorAutoSubmitEl.checked = Boolean(rule.autoSubmit);
+  setEditorStatus('', false);
+  renderEditorFields();
+  editorPanelEl.classList.remove('hidden');
+}
+
+function createSiteRow(hostname, rule) {
+  const row = document.createElement('section');
+  row.className = 'site-row';
+  row.dataset.hostname = hostname;
+
+  const textWrap = document.createElement('div');
+  textWrap.className = 'site-row-copy';
+
+  const title = document.createElement('div');
+  title.className = 'site-row-title';
+  title.textContent = hostname;
+
+  const meta = document.createElement('p');
+  meta.className = 'rule-meta';
+  meta.textContent = rule.updatedAt ? `Updated ${new Date(rule.updatedAt).toLocaleString()}` : 'Saved locally';
+
+  const actionButton = document.createElement('button');
+  actionButton.className = 'site-menu-button';
+  actionButton.type = 'button';
+  actionButton.setAttribute('aria-label', `Edit ${hostname}`);
+  actionButton.textContent = '⋮';
+  actionButton.addEventListener('click', () => openEditor(hostname));
+
+  textWrap.append(title, meta);
+  row.append(textWrap, actionButton);
+  return row;
+}
+
+function renderSiteList() {
+  siteListEl.innerHTML = '';
+  const entries = Object.entries(currentRules);
+
+  if (!entries.length) {
+    emptyStateEl.classList.remove('hidden');
+    closeEditor();
+    return;
+  }
+
+  emptyStateEl.classList.add('hidden');
+
+  entries.forEach(([hostname, rule]) => {
+    siteListEl.appendChild(createSiteRow(hostname, rule));
+  });
+}
+
+async function saveEditorRule() {
+  if (!currentHostname) {
+    return;
+  }
 
   const response = await browserApi.runtime.sendMessage({
     type: 'SAVE_SITE_RULE',
-    hostname,
-    fields: collectFields(card),
-    loginPagePath,
-    autoFill,
-    autoSubmit
+    hostname: currentHostname,
+    fields: collectFields(),
+    loginPagePath: '',
+    autoFill: editorAutoFillEl.checked,
+    autoSubmit: editorAutoSubmitEl.checked
   });
 
-  status.textContent = response?.ok ? 'Saved just now.' : response?.message || 'Unable to save.';
+  setEditorStatus(response?.ok ? 'Saved just now.' : response?.message || 'Unable to save.', !response?.ok);
+  await loadRules();
 }
 
-async function deleteRule(hostname, row) {
-  row.remove();
+async function deleteEditorRule() {
+  if (!currentHostname) {
+    return;
+  }
+
+  const hostname = currentHostname;
   const response = await browserApi.runtime.sendMessage({ type: 'DELETE_SITE_RULE', hostname });
 
   if (!response?.ok || !response?.verified) {
-    setOptionsStatus(response?.message || 'Unable to verify site deletion.', true);
-  } else {
-    setOptionsStatus(`Deleted ${hostname}.`);
+    setEditorStatus(response?.message || 'Unable to delete site.', true);
+    return;
   }
 
+  setOptionsStatus(`Deleted ${hostname}.`);
+  closeEditor();
   await loadRules();
 }
 
 async function clearAllRules() {
   const response = await browserApi.runtime.sendMessage({ type: 'CLEAR_ALL_SITE_RULES' });
   setOptionsStatus(response?.message || 'Cleared all site rules.', !response?.verified);
+  closeEditor();
   await loadRules();
 }
 
 async function resetExtensionData() {
   const response = await browserApi.runtime.sendMessage({ type: 'RESET_EXTENSION_DATA' });
   setOptionsStatus(response?.message || 'Reset extension data.', !response?.verified);
+  closeEditor();
   await loadRules();
 }
 
 async function loadRules() {
   const response = await browserApi.runtime.sendMessage({ type: 'GET_ALL_SITE_RULES' });
-  const rules = response?.rules || {};
-  rulesEl.innerHTML = '';
+  currentRules = response?.rules || {};
+  renderSiteList();
 
-  const entries = Object.entries(rules);
-  if (!entries.length) {
-    emptyStateEl.classList.remove('hidden');
-    return;
+  if (currentHostname && currentRules[currentHostname]) {
+    openEditor(currentHostname);
   }
-  emptyStateEl.classList.add('hidden');
-
-  entries.forEach(([hostname, rule]) => {
-    const row = document.createElement('section');
-    row.className = 'rule-card';
-    row.dataset.hostname = hostname;
-
-    const header = document.createElement('div');
-    header.className = 'rule-header';
-    const title = document.createElement('div');
-    title.className = 'rule-title';
-    title.textContent = hostname;
-    const updated = document.createElement('p');
-    updated.className = 'rule-meta';
-    updated.textContent = rule.updatedAt ? `Updated ${new Date(rule.updatedAt).toLocaleString()}` : 'Saved locally';
-    header.append(title, updated);
-
-    const fieldsWrap = document.createElement('div');
-    fieldsWrap.className = 'rule-fields';
-    normalizeFields(rule.fields, rule).forEach((field, index) => {
-      fieldsWrap.appendChild(createCredentialField(field, index));
-    });
-
-    const loginPagePathField = createLoginPagePathField(rule.loginPagePath);
-
-    const addFieldButton = document.createElement('button');
-    addFieldButton.className = 'secondary add-field-button';
-    addFieldButton.textContent = '+ Add Another Field';
-    addFieldButton.addEventListener('click', () => addFieldToCard(row));
-
-    const autoFillToggle = createToggle('Auto-fill', 'Use this rule automatically on page load.', 'rule-autofill', Boolean(rule.autoFill));
-    const autoSubmitToggle = createToggle('Auto-submit', 'Submit only when the page passes safety checks.', 'rule-autosubmit', Boolean(rule.autoSubmit));
-
-    const footer = document.createElement('div');
-    footer.className = 'rule-actions';
-    const status = document.createElement('p');
-    status.className = 'rule-status';
-    status.textContent = ' ';
-
-    const saveButton = document.createElement('button');
-    saveButton.className = 'secondary';
-    saveButton.textContent = 'Save Changes';
-    saveButton.addEventListener('click', async () => {
-      await saveRule(hostname, row);
-      await loadRules();
-    });
-
-    const deleteButton = document.createElement('button');
-    deleteButton.className = 'danger';
-    deleteButton.textContent = 'Delete';
-    deleteButton.addEventListener('click', async () => {
-      await deleteRule(hostname, row);
-    });
-
-    footer.append(saveButton, deleteButton);
-    row.append(header, fieldsWrap, addFieldButton, loginPagePathField, autoFillToggle, autoSubmitToggle, footer, status);
-    rulesEl.appendChild(row);
-  });
 }
 
 document.getElementById('clearAll').addEventListener('click', clearAllRules);
 document.getElementById('resetData').addEventListener('click', resetExtensionData);
+document.getElementById('closeEditor').addEventListener('click', closeEditor);
+document.getElementById('editorAddField').addEventListener('click', addFieldToEditor);
+document.getElementById('saveEditor').addEventListener('click', saveEditorRule);
+document.getElementById('deleteEditor').addEventListener('click', deleteEditorRule);
 
 browserApi.storage.onChanged.addListener((changes, areaName) => {
   if (areaName === 'local' && changes.sites) {
+    clearOptionsStatus();
     loadRules();
   }
 });
