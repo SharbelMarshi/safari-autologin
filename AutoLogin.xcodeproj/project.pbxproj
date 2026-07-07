@@ -11,20 +11,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		A95005C02FF5CEF000FC2183 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = A950059D2FF5CEEF00FC2183 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = A95005A42FF5CEEF00FC2183;
-			remoteInfo = AutoLogin;
-		};
-		A95005CA2FF5CEF000FC2183 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = A950059D2FF5CEEF00FC2183 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = A95005A42FF5CEEF00FC2183;
-			remoteInfo = AutoLogin;
-		};
 		A95005D72FF5CEF000FC2183 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = A950059D2FF5CEEF00FC2183 /* Project object */;
@@ -50,13 +36,11 @@
 
 /* Begin PBXFileReference section */
 		A95005A52FF5CEEF00FC2183 /* AutoLogin.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AutoLogin.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		A95005BF2FF5CEF000FC2183 /* AutoLoginTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AutoLoginTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		A95005C92FF5CEF000FC2183 /* AutoLoginUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AutoLoginUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A95005D52FF5CEF000FC2183 /* AutoLogin Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "AutoLogin Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		A95005EE2FF5CEF000FC2183 /* Exceptions for "Safari Extension" folder in "AutoLogin Extension" target */ = {
+		A95005EE2FF5CEF000FC2183 /* Exceptions for "Extension" folder in "AutoLogin Extension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -66,51 +50,26 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		A95005A72FF5CEEF00FC2183 /* macOS App */ = {
+		A95005A72FF5CEEF00FC2183 /* App */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "macOS App";
+			path = App;
 			sourceTree = "<group>";
 		};
-		A95005C22FF5CEF000FC2183 /* macOS App Tests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "macOS App Tests";
-			sourceTree = "<group>";
-		};
-		A95005CC2FF5CEF000FC2183 /* macOS App UI Tests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "macOS App UI Tests";
-			sourceTree = "<group>";
-		};
-		A95005D92FF5CEF000FC2183 /* Safari Extension */ = {
+		A95005D92FF5CEF000FC2183 /* Extension */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				A95005EE2FF5CEF000FC2183 /* Exceptions for "Safari Extension" folder in "AutoLogin Extension" target */,
+				A95005EE2FF5CEF000FC2183 /* Exceptions for "Extension" folder in "AutoLogin Extension" target */,
 			);
 			explicitFolders = (
-				Resources/_locales,
 				Resources/images,
 			);
-			path = "Safari Extension";
+			path = Extension;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		A95005A22FF5CEEF00FC2183 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		A95005BC2FF5CEF000FC2183 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		A95005C62FF5CEF000FC2183 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -130,10 +89,8 @@
 		A950059C2FF5CEEF00FC2183 = {
 			isa = PBXGroup;
 			children = (
-				A95005A72FF5CEEF00FC2183 /* macOS App */,
-				A95005C22FF5CEF000FC2183 /* macOS App Tests */,
-				A95005CC2FF5CEF000FC2183 /* macOS App UI Tests */,
-				A95005D92FF5CEF000FC2183 /* Safari Extension */,
+				A95005A72FF5CEEF00FC2183 /* App */,
+				A95005D92FF5CEF000FC2183 /* Extension */,
 				A95005A62FF5CEEF00FC2183 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -142,8 +99,6 @@
 			isa = PBXGroup;
 			children = (
 				A95005A52FF5CEEF00FC2183 /* AutoLogin.app */,
-				A95005BF2FF5CEF000FC2183 /* AutoLoginTests.xctest */,
-				A95005C92FF5CEF000FC2183 /* AutoLoginUITests.xctest */,
 				A95005D52FF5CEF000FC2183 /* AutoLogin Extension.appex */,
 			);
 			name = Products;
@@ -167,7 +122,7 @@
 				A95005D82FF5CEF000FC2183 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				A95005A72FF5CEEF00FC2183 /* macOS App */,
+				A95005A72FF5CEEF00FC2183 /* App */,
 			);
 			name = AutoLogin;
 			packageProductDependencies = (
@@ -175,52 +130,6 @@
 			productName = AutoLogin;
 			productReference = A95005A52FF5CEEF00FC2183 /* AutoLogin.app */;
 			productType = "com.apple.product-type.application";
-		};
-		A95005BE2FF5CEF000FC2183 /* AutoLoginTests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = A95005F82FF5CEF000FC2183 /* Build configuration list for PBXNativeTarget "AutoLoginTests" */;
-			buildPhases = (
-				A95005BB2FF5CEF000FC2183 /* Sources */,
-				A95005BC2FF5CEF000FC2183 /* Frameworks */,
-				A95005BD2FF5CEF000FC2183 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				A95005C12FF5CEF000FC2183 /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				A95005C22FF5CEF000FC2183 /* macOS App Tests */,
-			);
-			name = AutoLoginTests;
-			packageProductDependencies = (
-			);
-			productName = AutoLoginTests;
-			productReference = A95005BF2FF5CEF000FC2183 /* AutoLoginTests.xctest */;
-			productType = "com.apple.product-type.bundle.unit-test";
-		};
-		A95005C82FF5CEF000FC2183 /* AutoLoginUITests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = A95005FB2FF5CEF000FC2183 /* Build configuration list for PBXNativeTarget "AutoLoginUITests" */;
-			buildPhases = (
-				A95005C52FF5CEF000FC2183 /* Sources */,
-				A95005C62FF5CEF000FC2183 /* Frameworks */,
-				A95005C72FF5CEF000FC2183 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				A95005CB2FF5CEF000FC2183 /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				A95005CC2FF5CEF000FC2183 /* macOS App UI Tests */,
-			);
-			name = AutoLoginUITests;
-			packageProductDependencies = (
-			);
-			productName = AutoLoginUITests;
-			productReference = A95005C92FF5CEF000FC2183 /* AutoLoginUITests.xctest */;
-			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 		A95005D42FF5CEF000FC2183 /* AutoLogin Extension */ = {
 			isa = PBXNativeTarget;
@@ -235,7 +144,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				A95005D92FF5CEF000FC2183 /* Safari Extension */,
+				A95005D92FF5CEF000FC2183 /* Extension */,
 			);
 			name = "AutoLogin Extension";
 			packageProductDependencies = (
@@ -257,14 +166,6 @@
 					A95005A42FF5CEEF00FC2183 = {
 						CreatedOnToolsVersion = 26.6;
 					};
-					A95005BE2FF5CEF000FC2183 = {
-						CreatedOnToolsVersion = 26.6;
-						TestTargetID = A95005A42FF5CEEF00FC2183;
-					};
-					A95005C82FF5CEF000FC2183 = {
-						CreatedOnToolsVersion = 26.6;
-						TestTargetID = A95005A42FF5CEEF00FC2183;
-					};
 					A95005D42FF5CEF000FC2183 = {
 						CreatedOnToolsVersion = 26.6;
 					};
@@ -285,8 +186,6 @@
 			projectRoot = "";
 			targets = (
 				A95005A42FF5CEEF00FC2183 /* AutoLogin */,
-				A95005BE2FF5CEF000FC2183 /* AutoLoginTests */,
-				A95005C82FF5CEF000FC2183 /* AutoLoginUITests */,
 				A95005D42FF5CEF000FC2183 /* AutoLogin Extension */,
 			);
 		};
@@ -294,20 +193,6 @@
 
 /* Begin PBXResourcesBuildPhase section */
 		A95005A32FF5CEEF00FC2183 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		A95005BD2FF5CEF000FC2183 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		A95005C72FF5CEF000FC2183 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -331,20 +216,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		A95005BB2FF5CEF000FC2183 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		A95005C52FF5CEF000FC2183 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		A95005D12FF5CEF000FC2183 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -355,16 +226,6 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		A95005C12FF5CEF000FC2183 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = A95005A42FF5CEEF00FC2183 /* AutoLogin */;
-			targetProxy = A95005C02FF5CEF000FC2183 /* PBXContainerItemProxy */;
-		};
-		A95005CB2FF5CEF000FC2183 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = A95005A42FF5CEEF00FC2183 /* AutoLogin */;
-			targetProxy = A95005CA2FF5CEF000FC2183 /* PBXContainerItemProxy */;
-		};
 		A95005D82FF5CEF000FC2183 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = A95005D42FF5CEF000FC2183 /* AutoLogin Extension */;
@@ -383,7 +244,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "Safari Extension/Info.plist";
+				INFOPLIST_FILE = Extension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "AutoLogin Extension";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -392,7 +253,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.14;
-				MARKETING_VERSION = 0.1.1;
+				MARKETING_VERSION = 0.1.2;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
@@ -418,7 +279,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "Safari Extension/Info.plist";
+				INFOPLIST_FILE = Extension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "AutoLogin Extension";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -427,7 +288,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.14;
-				MARKETING_VERSION = 0.1.1;
+				MARKETING_VERSION = 0.1.2;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
@@ -585,7 +446,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.1.1;
+				MARKETING_VERSION = 0.1.2;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
@@ -626,7 +487,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.1.1;
+				MARKETING_VERSION = 0.1.2;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
@@ -642,86 +503,6 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-			};
-			name = Release;
-		};
-		A95005F92FF5CEF000FC2183 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = JZH2954S3D;
-				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 26.5;
-				MARKETING_VERSION = 0.1.1;
-				PRODUCT_BUNDLE_IDENTIFIER = Sharbel.AutoLoginTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				STRING_CATALOG_GENERATE_SYMBOLS = NO;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/AutoLogin.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/AutoLogin";
-			};
-			name = Debug;
-		};
-		A95005FA2FF5CEF000FC2183 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = JZH2954S3D;
-				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 26.5;
-				MARKETING_VERSION = 0.1.1;
-				PRODUCT_BUNDLE_IDENTIFIER = Sharbel.AutoLoginTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				STRING_CATALOG_GENERATE_SYMBOLS = NO;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/AutoLogin.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/AutoLogin";
-			};
-			name = Release;
-		};
-		A95005FC2FF5CEF000FC2183 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = JZH2954S3D;
-				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 0.1.1;
-				PRODUCT_BUNDLE_IDENTIFIER = Sharbel.AutoLoginUITests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				STRING_CATALOG_GENERATE_SYMBOLS = NO;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TEST_TARGET_NAME = AutoLogin;
-			};
-			name = Debug;
-		};
-		A95005FD2FF5CEF000FC2183 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = JZH2954S3D;
-				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 0.1.1;
-				PRODUCT_BUNDLE_IDENTIFIER = Sharbel.AutoLoginUITests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				STRING_CATALOG_GENERATE_SYMBOLS = NO;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TEST_TARGET_NAME = AutoLogin;
 			};
 			name = Release;
 		};
@@ -751,24 +532,6 @@
 			buildConfigurations = (
 				A95005F62FF5CEF000FC2183 /* Debug */,
 				A95005F72FF5CEF000FC2183 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		A95005F82FF5CEF000FC2183 /* Build configuration list for PBXNativeTarget "AutoLoginTests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				A95005F92FF5CEF000FC2183 /* Debug */,
-				A95005FA2FF5CEF000FC2183 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		A95005FB2FF5CEF000FC2183 /* Build configuration list for PBXNativeTarget "AutoLoginUITests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				A95005FC2FF5CEF000FC2183 /* Debug */,
-				A95005FD2FF5CEF000FC2183 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>AutoLogin</title>
+    <style>
+        * {
+            -webkit-user-select: none;
+            -webkit-user-drag: none;
+            cursor: default;
+            box-sizing: border-box;
+        }
+
+        :root {
+            color-scheme: light;
+            --spacing: 20px;
+            --surface: #ffffff;
+            --text-secondary: rgba(60, 60, 67, 0.74);
+            --text-primary: #111827;
+            --accent: #0a84ff;
+            --accent-hover: #0070e0;
+        }
+
+        html, body {
+            margin: 0;
+            height: 100%;
+            overflow: hidden;
+            background: var(--surface);
+            font: -apple-system-short-body;
+            color: var(--text-primary);
+        }
+
+        body:not(.state-on, .state-off) :is(.state-on, .state-off) { display: none; }
+        body.state-on :is(.state-off, .state-unknown) { display: none; }
+        body.state-off :is(.state-on, .state-unknown) { display: none; }
+
+        .shell {
+            max-width: 640px;
+            margin: 0 auto;
+            height: 100%;
+            display: flex;
+            align-items: center;
+        }
+
+        .hero {
+            display: grid;
+            gap: 12px;
+            width: 100%;
+            padding: 24px 32px;
+        }
+
+        .title-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        h1, p { margin: 0; }
+
+        h1 {
+            font-size: 24px;
+            line-height: 1.1;
+            font-weight: 700;
+        }
+
+        .lede, .hero p {
+            color: var(--text-secondary);
+            line-height: 1.45;
+        }
+
+        .hero .lede { font-size: 15px; max-width: 46ch; }
+        .hero .state-unknown, .hero .state-on, .hero .state-off { max-width: 52ch; }
+        .hero button { margin-top: 8px; }
+
+        button {
+            width: fit-content;
+            border: 1px solid transparent;
+            border-radius: 12px;
+            padding: 12px 16px;
+            background: var(--accent);
+            transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 8px 20px rgba(10, 132, 255, 0.2);
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            background: var(--accent-hover);
+            box-shadow: 0 10px 24px rgba(10, 132, 255, 0.24);
+        }
+
+        button:active { transform: translateY(0) scale(0.985); }
+
+        .app-icon {
+            width: 24px;
+            height: 24px;
+            flex: 0 0 24px;
+        }
+
+        @media (max-width: 720px) {
+            .hero { padding: 20px 24px; }
+        }
+    </style>
+</head>
+<body class="main-window">
+    <main class="shell">
+        <section class="hero">
+            <div class="title-row">
+                <svg class="app-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 15.9375 15.9453" aria-hidden="true">
+                    <path d="M7.96875 15.9375C12.3281 15.9375 15.9375 12.3203 15.9375 7.96875C15.9375 3.60938 12.3203 0 7.96094 0C3.60938 0 0 3.60938 0 7.96875C0 12.3203 3.61719 15.9375 7.96875 15.9375ZM7.96875 14.6094C4.28125 14.6094 1.33594 11.6562 1.33594 7.96875C1.33594 4.28125 4.27344 1.32812 7.96094 1.32812C11.6484 1.32812 14.6094 4.28125 14.6094 7.96875C14.6094 11.6562 11.6562 14.6094 7.96875 14.6094Z" />
+                    <path d="M4.53906 8.50781C4.53906 8.70312 4.69531 8.84375 4.89844 8.84375L7.54688 8.84375L6.13281 12.6406C5.94531 13.1406 6.47656 13.4141 6.80469 13.0078L11.0859 7.63281C11.1719 7.53906 11.2188 7.42969 11.2188 7.32812C11.2188 7.13281 11.0625 6.99219 10.8594 6.99219L8.21094 6.99219L9.625 3.19531C9.8125 2.69531 9.28125 2.42188 8.95312 2.82031L4.67188 8.19531C4.58594 8.29688 4.53906 8.40625 4.53906 8.50781Z" />
+                </svg>
+                <h1>AutoLogin</h1>
+            </div>
+            <p class="lede">Automatically fills login credentials and submitting it</p>
+            <p class="state-unknown">You can turn on AutoLogin in the Extensions section of Safari Settings.</p>
+            <p class="state-on">AutoLogin is enabled. You can manage website access, private browsing, and shortcuts in Safari Settings.</p>
+            <p class="state-off">AutoLogin is disabled. Turn it on in Safari Settings to start using saved site rules.</p>
+            <button class="open-preferences" type="button">Quit and Open Safari Settings…</button>
+        </section>
+    </main>
+    <script>
+        function show(enabled, useSettingsInsteadOfPreferences) {
+            if (useSettingsInsteadOfPreferences) {
+                document.querySelector('.state-on').innerText = "AutoLogin’s extension is currently on. You can turn it off in the Extensions section of Safari Settings.";
+                document.querySelector('.state-off').innerText = "AutoLogin’s extension is currently off. You can turn it on in the Extensions section of Safari Settings.";
+                document.querySelector('.state-unknown').innerText = "You can turn on AutoLogin’s extension in the Extensions section of Safari Settings.";
+                document.querySelector('.open-preferences').innerText = "Quit and Open Safari Settings…";
+            }
+
+            if (typeof enabled === 'boolean') {
+                document.body.classList.toggle('state-on', enabled);
+                document.body.classList.toggle('state-off', !enabled);
+            } else {
+                document.body.classList.remove('state-on', 'state-off');
+            }
+        }
+
+        document.querySelector('.open-preferences').addEventListener('click', () => {
+            webkit.messageHandlers.controller.postMessage('open-preferences');
+        });
+    </script>
+</body>
+</html>

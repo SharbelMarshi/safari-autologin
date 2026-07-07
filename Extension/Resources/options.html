@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AutoLogin Options</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="options-page">
+    <main class="options">
+      <section class="options-shell">
+        <div class="options-topbar">
+          <div class="options-heading">
+            <h1>AUTOLOGIN</h1>
+            <p class="options-subtitle">Saved site rules</p>
+          </div>
+          <div class="header-actions">
+            <button id="clearAll" class="secondary">Clear All</button>
+            <button id="resetData" class="danger">Reset Extension Data</button>
+          </div>
+        </div>
+
+        <div class="popup-divider"></div>
+
+        <p id="optionsStatus" class="status hidden" aria-live="polite"></p>
+
+        <section id="emptyState" class="empty-state hidden">
+          <h2>No saved sites yet</h2>
+          <p>Credentials and login-page rules you save from the popup will appear here for review.</p>
+        </section>
+
+        <div id="siteList" class="site-list"></div>
+
+        <section id="editorPanel" class="editor-panel hidden">
+          <div class="editor-header">
+            <div>
+              <p class="options-subtitle">Editing</p>
+              <h2 id="editorTitle">Site</h2>
+            </div>
+          </div>
+
+          <div class="popup-divider"></div>
+
+          <div id="editorFields" class="rule-fields"></div>
+          <button id="editorAddField" class="secondary add-field-button" type="button">+ Add Another Field</button>
+
+          <label class="switch-row">
+            <span>
+              <strong>Auto-fill</strong>
+              <small>Use saved credentials when this page loads.</small>
+            </span>
+            <input id="editorAutoFill" type="checkbox" />
+          </label>
+
+          <label class="switch-row">
+            <span>
+              <strong>Auto-submit</strong>
+              <small>Only after both fields are filled safely.</small>
+            </span>
+            <input id="editorAutoSubmit" type="checkbox" />
+          </label>
+
+          <div class="rule-actions">
+            <button id="saveEditor" type="button">Save Changes</button>
+            <button id="deleteEditor" class="secondary" type="button">Delete Site</button>
+          </div>
+          <p id="editorStatus" class="rule-status"></p>
+        </section>
+      </section>
+    </main>
+    <script src="options.js"></script>
+  </body>
+</html>
