@@ -6,12 +6,14 @@
 }
 
 :root {
-    color-scheme: light dark;
+    color-scheme: light;
     --spacing: 20px;
-    --surface: rgba(255, 255, 255, 0.62);
-    --surface-border: rgba(60, 60, 67, 0.08);
+    --surface: #ffffff;
+    --surface-border: rgba(60, 60, 67, 0.12);
     --text-secondary: rgba(60, 60, 67, 0.74);
-    --shadow: 0 18px 40px rgba(16, 24, 40, 0.08);
+    --text-primary: #111827;
+    --accent: #0a84ff;
+    --accent-hover: #0070e0;
 }
 
 html {
@@ -23,13 +25,10 @@ body {
     margin: 0;
     height: 100%;
     overflow: hidden;
-    padding: 24px;
-    background:
-        radial-gradient(circle at top left, rgba(10, 132, 255, 0.15), transparent 28%),
-        radial-gradient(circle at bottom right, rgba(90, 200, 250, 0.12), transparent 24%),
-        linear-gradient(180deg, #f5f6f9, #eceff4);
+    padding: 0;
+    background: var(--surface);
     font: -apple-system-short-body;
-    color: canvasText;
+    color: var(--text-primary);
 }
 
 body:not(.state-on, .state-off) :is(.state-on, .state-off) {
@@ -45,26 +44,18 @@ body.state-off :is(.state-on, .state-unknown) {
 }
 
 .shell {
-    max-width: 620px;
+    max-width: 640px;
     margin: 0 auto;
     height: 100%;
     display: flex;
     align-items: center;
 }
 
-.card {
-    background: var(--surface);
-    border: 1px solid var(--surface-border);
-    border-radius: 20px;
-    backdrop-filter: blur(24px);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.7), var(--shadow);
-}
-
 .hero {
     display: grid;
-    gap: 14px;
+    gap: 12px;
     width: 100%;
-    padding: 24px;
+    padding: 24px 32px;
 }
 
 .title-row {
@@ -81,6 +72,7 @@ p {
 h1 {
     font-size: 24px;
     line-height: 1.1;
+    font-weight: 700;
 }
 
 .lede,
@@ -94,43 +86,48 @@ h1 {
     max-width: 46ch;
 }
 
+.hero .state-unknown,
+.hero .state-on,
+.hero .state-off {
+    max-width: 52ch;
+}
+
 .hero button {
-    margin-top: 4px;
+    margin-top: 8px;
 }
 
 button {
     width: fit-content;
-    border: 1px solid rgba(255,255,255,0.42);
+    border: 1px solid transparent;
     border-radius: 12px;
     padding: 12px 16px;
-    background:
-        linear-gradient(180deg, rgba(255,255,255,0.42), rgba(255,255,255,0.16)),
-        linear-gradient(180deg, rgba(10,132,255,0.88), rgba(0,102,214,0.82));
-    color: white;
+    background: var(--accent);
+    transition:
+        transform 160ms ease,
+        background 160ms ease,
+        box-shadow 160ms ease;
+    color: #ffffff;
     font-size: 14px;
     font-weight: 600;
-    box-shadow: 0 10px 24px rgba(0, 122, 255, 0.16);
-    backdrop-filter: blur(18px);
+    box-shadow: 0 8px 20px rgba(10, 132, 255, 0.2);
 }
 
-@media (prefers-color-scheme: dark) {
-    :root {
-        --surface: rgba(36, 37, 41, 0.58);
-        --surface-border: rgba(255, 255, 255, 0.08);
-        --text-secondary: rgba(235, 235, 245, 0.72);
-        --shadow: 0 24px 48px rgba(0, 0, 0, 0.22);
-    }
+button:hover {
+  transform: translateY(-1px);
+  background: var(--accent-hover);
+  box-shadow: 0 10px 24px rgba(10, 132, 255, 0.24);
+}
 
-    body {
-        background:
-            radial-gradient(circle at top left, rgba(10, 132, 255, 0.24), transparent 28%),
-            radial-gradient(circle at bottom right, rgba(90, 200, 250, 0.14), transparent 24%),
-            linear-gradient(180deg, #1b1c1f, #131417);
-    }
+button:active {
+  transform: translateY(0) scale(0.985);
 }
 
 @media (max-width: 720px) {
     body {
-        padding: 18px;
+        padding: 0;
+    }
+
+    .hero {
+        padding: 20px 24px;
     }
 }
