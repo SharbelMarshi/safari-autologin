@@ -1,10 +1,169 @@
 const browserApi = globalThis.browser || globalThis.chrome;
+const actionApi = browserApi.action || browserApi.browserAction;
 const STORAGE_KEY = 'sites';
-const STORAGE_KEYS = [STORAGE_KEY];
-const ICON_ACTIVE = 'images/toolbar-icon-active.svg';
-const ICON_INACTIVE = 'images/toolbar-icon-inactive.svg';
+const SCHEMA_VERSION_KEY = 'schemaVersion';
+const CURRENT_SCHEMA_VERSION = 2;
+const STORAGE_KEYS = [STORAGE_KEY, SCHEMA_VERSION_KEY];
+const NATIVE_APP_ID = 'Sharbel.AutoLogin.Extension';
+const ICON_ACTIVE = {
+  18: 'images/toolbar-icon-18.png',
+  36: 'images/toolbar-icon-36.png',
+  48: 'images/toolbar-icon-48.png'
+};
+const ICON_INACTIVE = {
+  18: 'images/toolbar-icon-inactive-18.png',
+  36: 'images/toolbar-icon-inactive-36.png',
+  48: 'images/toolbar-icon-inactive-48.png'
+};
 function getStorage() {
   return browserApi.storage.local;
+}
+
+// --- Keychain bridge (secrets live in the macOS Keychain via the native
+// extension handler; extension storage only holds opaque secretRef ids) ---
+
+async function nativeRequest(payload) {
+  if (typeof browserApi.runtime?.sendNativeMessage !== 'function') {
+    return null;
+  }
+
+  try {
+    const response = await browserApi.runtime.sendNativeMessage(NATIVE_APP_ID, payload);
+    return response?.ok ? response : null;
+  } catch (_error) {
+    return null;
+  }
+}
+
+function makeSecretRef() {
+  return globalThis.crypto?.randomUUID?.() || `ref-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+async function storeSecret(secretRef, value) {
+  return Boolean(await nativeRequest({ action: 'set-secret', id: secretRef, value }));
+}
+
+async function resolveSecrets(secretRefs) {
+  if (!secretRefs.length) {
+    return {};
+  }
+
+  const response = await nativeRequest({ action: 'get-secrets', ids: secretRefs });
+  return response?.values || {};
+}
+
+async function deleteSecretsByRefs(secretRefs) {
+  if (secretRefs.length) {
+    await nativeRequest({ action: 'delete-secrets', ids: secretRefs });
+  }
+}
+
+async function deleteAllSecrets() {
+  await nativeRequest({ action: 'delete-all-secrets' });
+}
+
+function collectSecretRefs(rule) {
+  return (rule?.fields || []).map((field) => field?.secretRef).filter(Boolean);
+}
+
+async function protectSecretFields(fields, previousFields) {
+  const previousRefs = new Map(
+    (previousFields || [])
+      .filter((field) => field?.secretRef)
+      .map((field) => [field.id, field.secretRef])
+  );
+
+  const protectedFields = [];
+  for (const field of fields) {
+    if (field.type !== 'password') {
+      protectedFields.push({ ...field, secretRef: '' });
+      continue;
+    }
+
+    if (!field.value) {
+      // No new value entered: keep whatever secret this field already had.
+      protectedFields.push({ ...field, secretRef: field.secretRef || previousRefs.get(field.id) || '' });
+      continue;
+    }
+
+    const secretRef = field.secretRef || previousRefs.get(field.id) || makeSecretRef();
+    if (await storeSecret(secretRef, field.value)) {
+      protectedFields.push({ ...field, value: '', secretRef });
+    } else {
+      // Keychain unavailable: fall back to plain extension storage.
+      protectedFields.push({ ...field, secretRef: '' });
+    }
+  }
+
+  return protectedFields;
+}
+
+async function resolveRuleSecretsForUi(rule) {
+  const pending = (rule?.fields || []).filter((field) => field.secretRef && !field.value);
+  if (!pending.length) {
+    return rule;
+  }
+
+  const values = await resolveSecrets(pending.map((field) => field.secretRef));
+  return {
+    ...rule,
+    fields: rule.fields.map((field) =>
+      field.secretRef && !field.value ? { ...field, value: values[field.secretRef] || '' } : field
+    )
+  };
+}
+
+async function migrateStoredData() {
+  try {
+    const storage = getStorage();
+    const data = await storage.get(STORAGE_KEYS);
+    const sites = data[STORAGE_KEY] || {};
+    let changed = false;
+    let plaintextRemains = false;
+
+    for (const rule of Object.values(sites)) {
+      const fields = Array.isArray(rule?.fields) ? rule.fields : [];
+      for (const field of fields) {
+        if (field?.type !== 'password' || !field.value) {
+          continue;
+        }
+
+        const secretRef = field.secretRef || makeSecretRef();
+        if (await storeSecret(secretRef, field.value)) {
+          field.secretRef = secretRef;
+          field.value = '';
+          changed = true;
+        } else {
+          plaintextRemains = true;
+        }
+      }
+    }
+
+    if (changed) {
+      await storage.set({ [STORAGE_KEY]: sites });
+    }
+
+    // Only stamp the schema version once every password made it into the
+    // Keychain, so a failed native connection is retried on the next launch.
+    if (!plaintextRemains && data[SCHEMA_VERSION_KEY] !== CURRENT_SCHEMA_VERSION) {
+      await storage.set({ [SCHEMA_VERSION_KEY]: CURRENT_SCHEMA_VERSION });
+    }
+  } catch (error) {
+    console.error('AutoLogin migration error', error);
+  }
+}
+
+function isTrustedUiSender(sender) {
+  if (!sender) {
+    return false;
+  }
+
+  if (sender.url) {
+    const base = browserApi.runtime.getURL('');
+    return Boolean(base) && sender.url.startsWith(base);
+  }
+
+  return !sender.tab;
 }
 
 function normalizeHostname(hostname) {
@@ -18,8 +177,8 @@ function getDefaultSiteRule(hostname) {
       { id: 'password', label: 'Password', value: '', type: 'password' }
     ],
     loginPagePath: '',
-    autoFill: false,
-    autoSubmit: false,
+    autoFill: true,
+    autoSubmit: true,
     updatedAt: new Date().toISOString()
   };
 }
@@ -37,7 +196,8 @@ function sanitizeFields(fields) {
           value: String(field?.value || ''),
           type: field?.type === 'password' ? 'password' : 'text',
           meaning: String(field?.meaning || (field?.type === 'password' ? 'password' : `text-${index + 1}`)),
-          position: String(field?.position || '')
+          position: String(field?.position || ''),
+          secretRef: typeof field?.secretRef === 'string' ? field.secretRef : ''
         }))
         .filter((field) => field.label)
     : [];
@@ -68,7 +228,11 @@ function normalizeSiteRule(hostname, rule) {
     ...rule,
     hostname,
     fields,
-    loginPagePath: normalizeLoginPagePath(rule.loginPagePath)
+    loginPagePath: normalizeLoginPagePath(rule.loginPagePath),
+    // Auto-fill and auto-submit are built-in behavior, not user settings;
+    // older stored rules may still carry false here.
+    autoFill: true,
+    autoSubmit: true
   };
 }
 
@@ -123,6 +287,7 @@ async function saveSite(hostname, payload) {
 
 async function deleteSite(hostname) {
   const rawSites = await getRawSites();
+  await deleteSecretsByRefs(collectSecretRefs(rawSites[hostname]));
   delete rawSites[hostname];
   const verifiedSites = await writeSites(rawSites);
   return {
@@ -135,6 +300,7 @@ async function deleteSite(hostname) {
 }
 
 async function clearAllSites() {
+  await deleteAllSecrets();
   await writeSites({});
   const verifiedSites = await getSites();
   return {
@@ -146,6 +312,7 @@ async function clearAllSites() {
 }
 
 async function clearExtensionData() {
+  await deleteAllSecrets();
   const storage = getStorage();
   await storage.remove(STORAGE_KEYS);
   const after = await storage.get(null);
@@ -174,8 +341,7 @@ async function resolveTabId(message, sender) {
     return sender.tab.id;
   }
 
-  const tabs = await browserApi.tabs.query({ active: true, currentWindow: true });
-  return tabs[0]?.id || null;
+  return null;
 }
 
 function tryGetHostname(url) {
@@ -199,48 +365,19 @@ async function hostnameHasSavedRule(hostname) {
   return Object.prototype.hasOwnProperty.call(rawSites, hostname);
 }
 
-async function updateToolbarIconForTab(tab) {
-  if (!tab?.id) {
+async function updateToolbarIconForTab(tab, hostnameHint) {
+  if (!tab?.id || !actionApi?.setIcon) {
     return;
   }
 
-  const hostname = tryGetHostname(tab.url);
+  const hostname = hostnameHint || tryGetHostname(tab.url);
   const active = await hostnameHasSavedRule(hostname);
   const path = active ? ICON_ACTIVE : ICON_INACTIVE;
 
   try {
-    await browserApi.action.setIcon({ tabId: tab.id, path });
+    await actionApi.setIcon({ tabId: tab.id, path });
   } catch (_error) {
-    try {
-      await browserApi.action.setIcon({ path });
-    } catch (_fallbackError) {
-      // Safari may not support setIcon in all builds.
-    }
-  }
-}
-
-async function refreshToolbarIcons(hostnames) {
-  let tabs = [];
-
-  try {
-    tabs = await browserApi.tabs.query({});
-  } catch (_error) {
-    tabs = await browserApi.tabs.query({ active: true, currentWindow: true });
-  }
-
-  const hostnameFilter = Array.isArray(hostnames) && hostnames.length
-    ? new Set(hostnames.map((hostname) => normalizeHostname(hostname)))
-    : null;
-
-  for (const tab of tabs) {
-    if (hostnameFilter) {
-      const tabHostname = tryGetHostname(tab.url);
-      if (!hostnameFilter.has(tabHostname)) {
-        continue;
-      }
-    }
-
-    await updateToolbarIconForTab(tab);
+    // Per-tab icons are optional; keep the manifest default icon instead.
   }
 }
 
@@ -248,25 +385,36 @@ browserApi.runtime.onMessage.addListener((message, sender, sendResponse) => {
   const handler = async () => {
     switch (message?.type) {
       case 'SAVE_SITE_RULE': {
+        if (!isTrustedUiSender(sender)) {
+          return { ok: false, message: 'Not allowed.' };
+        }
         const hostname = normalizeHostname(message.hostname || '');
         if (!hostname) {
           return { ok: false, message: 'No hostname provided.' };
         }
+
+        const plainFields = sanitizeFields(message.fields);
+        const previousRule = (await getRawSites())[hostname];
         const saved = await saveSite(hostname, {
-          fields: sanitizeFields(message.fields),
+          fields: await protectSecretFields(plainFields, previousRule?.fields),
           loginPagePath: normalizeLoginPagePath(message.loginPagePath),
-          autoFill: Boolean(message.autoFill),
-          autoSubmit: Boolean(message.autoSubmit)
+          autoFill: true,
+          autoSubmit: true
         });
 
-        await refreshToolbarIcons([hostname]);
+        await updateToolbarIconForTab(
+          message.tabId ? { id: message.tabId } : sender.tab,
+          hostname
+        );
 
         const tabId = message.tabId || sender.tab?.id || null;
-        if (tabId && saved?.autoFill) {
+        if (tabId && saved) {
           try {
             await browserApi.tabs.sendMessage(tabId, {
               type: 'APPLY_SITE_RULE',
-              payload: saved
+              // Send the plaintext values for the immediate fill; storage only
+              // keeps the Keychain references.
+              payload: { ...saved, fields: plainFields }
             });
           } catch (_error) {
             // Content script may not be injected on this tab yet.
@@ -274,6 +422,37 @@ browserApi.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
 
         return { ok: true, message: 'Saved site rule.', rule: saved };
+      }
+      case 'REFRESH_TOOLBAR_ICON': {
+        const tabId = message.tabId || sender.tab?.id || null;
+        if (!tabId) {
+          return { ok: false, message: 'No tab to update.' };
+        }
+
+        const hostname = normalizeHostname(message.hostname || '') || tryGetHostname(sender.tab?.url);
+        await updateToolbarIconForTab({ id: tabId, url: sender.tab?.url || '' }, hostname);
+        return { ok: true };
+      }
+      case 'RESOLVE_SECRETS': {
+        const requestedRefs = Array.isArray(message.refs)
+          ? message.refs.filter((ref) => typeof ref === 'string' && ref)
+          : [];
+
+        let allowedRefs = requestedRefs;
+        if (!isTrustedUiSender(sender)) {
+          // Content scripts only get the secrets saved for their own hostname.
+          const senderHostname = tryGetHostname(sender.tab?.url || sender.url || '');
+          if (!senderHostname) {
+            return { ok: false, values: {} };
+          }
+
+          const rawSites = await getRawSites();
+          const ruleRefs = new Set(collectSecretRefs(rawSites[senderHostname]));
+          allowedRefs = requestedRefs.filter((ref) => ruleRefs.has(ref));
+        }
+
+        const values = await resolveSecrets(allowedRefs);
+        return { ok: true, values };
       }
       case 'FILL_NOW': {
         const tabId = await resolveTabId(message, sender);
@@ -299,33 +478,42 @@ browserApi.runtime.onMessage.addListener((message, sender, sendResponse) => {
       case 'GET_SITE_RULE': {
         const hostname = normalizeHostname(message.hostname || '');
         const rule = await getSiteRule(hostname);
-        return { ok: true, rule };
+        // Only the extension's own pages get secrets resolved for editing.
+        const resolved = rule && isTrustedUiSender(sender) ? await resolveRuleSecretsForUi(rule) : rule;
+        return { ok: true, rule: resolved };
       }
       case 'GET_ALL_SITE_RULES': {
         const rules = await getAllSiteRules();
         return { ok: true, rules };
       }
       case 'DELETE_SITE_RULE': {
+        if (!isTrustedUiSender(sender)) {
+          return { ok: false, message: 'Not allowed.' };
+        }
         const hostname = normalizeHostname(message.hostname || '');
         if (!hostname) {
           return { ok: false, message: 'No hostname provided.' };
         }
         const deletionResult = await deleteSite(hostname);
-        await refreshToolbarIcons([hostname]);
         return {
           ...deletionResult,
           message: deletionResult.verified ? 'Deleted site rule.' : 'Could not verify deletion.'
         };
       }
       case 'CLEAR_ALL_SITE_RULES': {
+        if (!isTrustedUiSender(sender)) {
+          return { ok: false, message: 'Not allowed.' };
+        }
         const clearResult = await clearAllSites();
-        await refreshToolbarIcons();
         return {
           ...clearResult,
           message: clearResult.verified ? 'Cleared all site rules.' : 'Could not verify clearing site rules.'
         };
       }
       case 'RESET_EXTENSION_DATA': {
+        if (!isTrustedUiSender(sender)) {
+          return { ok: false, message: 'Not allowed.' };
+        }
         const resetResult = await clearExtensionData();
         return {
           ...resetResult,
@@ -345,32 +533,23 @@ browserApi.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return true;
 });
 
-browserApi.storage.onChanged.addListener((changes, areaName) => {
-  if (areaName !== 'local' || !changes.sites) {
-    return;
-  }
+if (browserApi.tabs?.onActivated) {
+  browserApi.tabs.onActivated.addListener(async ({ tabId }) => {
+    try {
+      const tab = await browserApi.tabs.get(tabId);
+      await updateToolbarIconForTab(tab);
+    } catch (_error) {
+      // The tab may already be gone or inaccessible.
+    }
+  });
+}
 
-  const oldSites = changes.sites.oldValue || {};
-  const newSites = changes.sites.newValue || {};
-  const affectedHostnames = new Set([
-    ...Object.keys(oldSites),
-    ...Object.keys(newSites)
-  ]);
+if (browserApi.tabs?.onUpdated) {
+  browserApi.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+    if (changeInfo.url || changeInfo.status === 'complete') {
+      updateToolbarIconForTab(tab);
+    }
+  });
+}
 
-  refreshToolbarIcons([...affectedHostnames]);
-});
-
-browserApi.tabs.onActivated.addListener(async ({ tabId }) => {
-  const tabs = await browserApi.tabs.query({ active: true, currentWindow: true });
-  if (tabs[0]) {
-    await updateToolbarIconForTab(tabs[0]);
-  }
-});
-
-browserApi.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-  if (changeInfo.status === 'complete' || changeInfo.url) {
-    await updateToolbarIconForTab(tab);
-  }
-});
-
-refreshToolbarIcons();
+migrateStoredData();

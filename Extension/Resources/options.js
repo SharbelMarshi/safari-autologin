@@ -5,8 +5,7 @@ const optionsStatusEl = document.getElementById('optionsStatus');
 const editorPanelEl = document.getElementById('editorPanel');
 const editorTitleEl = document.getElementById('editorTitle');
 const editorFieldsEl = document.getElementById('editorFields');
-const editorAutoFillEl = document.getElementById('editorAutoFill');
-const editorAutoSubmitEl = document.getElementById('editorAutoSubmit');
+const editorLoginPathEl = document.getElementById('editorLoginPath');
 const editorStatusEl = document.getElementById('editorStatus');
 
 let currentRules = {};
@@ -38,34 +37,31 @@ function normalizeFields(fields, rule) {
       value: field?.value || '',
       type: field?.type === 'password' ? 'password' : 'text',
       meaning: field?.meaning || (field?.type === 'password' ? 'password' : `text-${index + 1}`),
-      position: field?.position || ''
+      position: field?.position || '',
+      secretRef: field?.secretRef || ''
     }));
   }
 
   return [
-    { id: 'username', label: 'Username or email', value: rule?.username || '', type: 'text', meaning: 'username', position: '' },
-    { id: 'password', label: 'Password', value: rule?.password || '', type: 'password', meaning: 'password', position: '' }
+    { id: 'username', label: 'Username or email', value: rule?.username || '', type: 'text', meaning: 'username', position: '', secretRef: '' },
+    { id: 'password', label: 'Password', value: rule?.password || '', type: 'password', meaning: 'password', position: '', secretRef: '' }
   ];
 }
 
-function createToggle(labelText, helperText, className, checked) {
-  const label = document.createElement('label');
-  label.className = 'switch-row';
-
-  const textWrap = document.createElement('span');
-  const title = document.createElement('strong');
-  title.textContent = labelText;
-  const helper = document.createElement('small');
-  helper.textContent = helperText;
-  textWrap.append(title, helper);
-
-  const input = document.createElement('input');
-  input.type = 'checkbox';
-  input.className = className;
-  input.checked = checked;
-
-  label.append(textWrap, input);
-  return label;
+function createRevealButton(input) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'reveal-button';
+  button.textContent = 'Show';
+  button.setAttribute('aria-label', 'Show password');
+  button.addEventListener('click', (event) => {
+    event.preventDefault();
+    const reveal = input.type === 'password';
+    input.type = reveal ? 'text' : 'password';
+    button.textContent = reveal ? 'Hide' : 'Show';
+    button.setAttribute('aria-label', reveal ? 'Hide password' : 'Show password');
+  });
+  return button;
 }
 
 function renderEditorFields() {
@@ -78,15 +74,27 @@ function renderEditorFields() {
     const label = document.createElement('span');
     label.className = 'field-label';
     label.textContent = field.label;
+    label.dir = 'auto';
 
     const input = document.createElement('input');
     input.type = field.type;
+    input.dir = 'auto';
     input.value = field.value || '';
     input.addEventListener('input', (event) => {
       currentFields[index].value = event.target.value;
     });
 
-    wrapper.append(label, input);
+    wrapper.append(label);
+
+    if (field.type === 'password') {
+      const inputWrap = document.createElement('span');
+      inputWrap.className = 'password-input-wrap';
+      inputWrap.append(input, createRevealButton(input));
+      wrapper.append(inputWrap);
+    } else {
+      wrapper.append(input);
+    }
+
     editorFieldsEl.appendChild(wrapper);
   });
 }
@@ -98,7 +106,8 @@ function collectFields() {
     value: field.value || '',
     type: field.type,
     meaning: field.meaning,
-    position: field.position
+    position: field.position,
+    secretRef: field.secretRef || ''
   }));
 }
 
@@ -111,7 +120,8 @@ function addFieldToEditor() {
     value: '',
     type: 'text',
     meaning: `text-${nextIndex}`,
-    position: ''
+    position: '',
+    secretRef: ''
   };
 
   if (passwordIndex >= 0) {
@@ -130,22 +140,24 @@ function closeEditor() {
   setEditorStatus('', false);
 }
 
-function openEditor(hostname) {
+async function openEditor(hostname) {
   if (currentHostname === hostname && !editorPanelEl.classList.contains('hidden')) {
     closeEditor();
     return;
   }
 
-  const rule = currentRules[hostname];
+  // Load through the background so Keychain-backed passwords are resolved.
+  const response = await browserApi.runtime.sendMessage({ type: 'GET_SITE_RULE', hostname });
+  const rule = response?.rule;
   if (!rule) {
+    setOptionsStatus(`Could not load ${hostname}.`, true);
     return;
   }
 
   currentHostname = hostname;
   currentFields = normalizeFields(rule.fields, rule);
   editorTitleEl.textContent = hostname;
-  editorAutoFillEl.checked = Boolean(rule.autoFill);
-  editorAutoSubmitEl.checked = Boolean(rule.autoSubmit);
+  editorLoginPathEl.value = rule.loginPagePath || '';
   setEditorStatus('', false);
   renderEditorFields();
   editorPanelEl.classList.remove('hidden');
@@ -171,7 +183,7 @@ function createSiteRow(hostname, rule) {
   actionButton.className = 'site-menu-button';
   actionButton.type = 'button';
   actionButton.setAttribute('aria-label', `Edit ${hostname}`);
-  actionButton.textContent = '⋮';
+  actionButton.textContent = '›';
   actionButton.addEventListener('click', () => openEditor(hostname));
 
   textWrap.append(title, meta);
@@ -205,13 +217,10 @@ async function saveEditorRule() {
     type: 'SAVE_SITE_RULE',
     hostname: currentHostname,
     fields: collectFields(),
-    loginPagePath: '',
-    autoFill: editorAutoFillEl.checked,
-    autoSubmit: editorAutoSubmitEl.checked
+    loginPagePath: editorLoginPathEl.value.trim()
   });
 
   setEditorStatus(response?.ok ? 'Saved just now.' : response?.message || 'Unable to save.', !response?.ok);
-  await loadRules();
 }
 
 async function deleteEditorRule() {
@@ -246,25 +255,57 @@ async function resetExtensionData() {
   await loadRules();
 }
 
+// Refreshes the site list only; the open editor keeps its in-progress edits
+// and is closed only when its site no longer exists.
 async function loadRules() {
   const response = await browserApi.runtime.sendMessage({ type: 'GET_ALL_SITE_RULES' });
   currentRules = response?.rules || {};
-  renderSiteList();
 
-  if (currentHostname && currentRules[currentHostname]) {
-    openEditor(currentHostname);
+  if (currentHostname && !currentRules[currentHostname]) {
+    closeEditor();
   }
+
+  renderSiteList();
 }
 
-document.getElementById('clearAll').addEventListener('click', clearAllRules);
-document.getElementById('resetData').addEventListener('click', resetExtensionData);
+const confirmTimers = new WeakMap();
+
+// Destructive buttons require a second click within a few seconds.
+function withConfirmation(button, confirmLabel, action) {
+  button.addEventListener('click', () => {
+    if (button.dataset.confirming === 'true') {
+      window.clearTimeout(confirmTimers.get(button));
+      delete button.dataset.confirming;
+      button.classList.remove('confirming');
+      button.textContent = button.dataset.originalLabel;
+      action();
+      return;
+    }
+
+    button.dataset.originalLabel = button.textContent;
+    button.dataset.confirming = 'true';
+    button.classList.add('confirming');
+    button.textContent = confirmLabel;
+
+    confirmTimers.set(
+      button,
+      window.setTimeout(() => {
+        delete button.dataset.confirming;
+        button.classList.remove('confirming');
+        button.textContent = button.dataset.originalLabel;
+      }, 4000)
+    );
+  });
+}
+
+withConfirmation(document.getElementById('clearAll'), 'Really clear all?', clearAllRules);
+withConfirmation(document.getElementById('resetData'), 'Really reset?', resetExtensionData);
+withConfirmation(document.getElementById('deleteEditor'), 'Really delete?', deleteEditorRule);
 document.getElementById('editorAddField').addEventListener('click', addFieldToEditor);
 document.getElementById('saveEditor').addEventListener('click', saveEditorRule);
-document.getElementById('deleteEditor').addEventListener('click', deleteEditorRule);
 
 browserApi.storage.onChanged.addListener((changes, areaName) => {
   if (areaName === 'local' && changes.sites) {
-    clearOptionsStatus();
     loadRules();
   }
 });

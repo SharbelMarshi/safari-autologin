@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AutoLogin Options</title>
-    <link rel="stylesheet" href="styles.css" />
+    <title>AutoLogin Settings</title>
+    <link rel="stylesheet" href="options.css" />
   </head>
   <body class="options-page">
     <main class="options">
@@ -44,21 +44,12 @@
           <div id="editorFields" class="rule-fields"></div>
           <button id="editorAddField" class="secondary add-field-button" type="button">+ Add Another Field</button>
 
-          <label class="switch-row">
-            <span>
-              <strong>Auto-fill</strong>
-              <small>Use saved credentials when this page loads.</small>
-            </span>
-            <input id="editorAutoFill" type="checkbox" />
+          <label class="field-group">
+            <span class="field-label">Login page path (optional)</span>
+            <input id="editorLoginPath" type="text" placeholder="/login — autofill only on this exact path" />
           </label>
 
-          <label class="switch-row">
-            <span>
-              <strong>Auto-submit</strong>
-              <small>Only after both fields are filled safely.</small>
-            </span>
-            <input id="editorAutoSubmit" type="checkbox" />
-          </label>
+          <p class="field-help">Fills and signs in automatically when you visit this site's login page.</p>
 
           <div class="rule-actions">
             <button id="saveEditor" type="button">Save Changes</button>

@@ -1,6 +1,6 @@
 const browserApi = globalThis.browser || globalThis.chrome;
-const MAX_AUTOFILL_ATTEMPTS = 2;
-const AUTOFILL_SECOND_ATTEMPT_DELAY = 80;
+const MAX_AUTOFILL_ATTEMPTS = 4;
+const AUTOFILL_RETRY_DELAYS = [120, 400, 1200];
 
 let cachedHostname = '';
 let cachedRule = null;
@@ -132,31 +132,41 @@ function getFieldDescriptor(field, index) {
   };
 }
 
-function detectCaptcha() {
-  if (document.body?.textContent && /captcha|recaptcha|hcaptcha/i.test(document.body.textContent)) {
-    const visibleCaptchaNodes = Array.from(document.querySelectorAll('iframe, img, div, span, p, label')).filter((element) => {
-      if (!isVisibleField(element) && !(element.getClientRects && element.getClientRects().length > 0)) {
-        return false;
-      }
-      const text = (element?.textContent || '').toLowerCase();
-      return /captcha|recaptcha|hcaptcha/i.test(text);
-    });
+const CAPTCHA_SELECTORS = [
+  'iframe[src*="recaptcha" i]',
+  'iframe[src*="hcaptcha" i]',
+  'iframe[src*="turnstile" i]',
+  'iframe[src*="arkoselabs" i]',
+  '.g-recaptcha',
+  '.h-captcha',
+  '.cf-turnstile',
+  '[data-sitekey]',
+  '[class*="captcha" i]',
+  '[id*="captcha" i]',
+  'input[name*="captcha" i]',
+  'img[src*="captcha" i]'
+].join(', ');
 
-    if (visibleCaptchaNodes.length > 0) {
-      return true;
-    }
-  }
+// Markers of an invisible captcha (reCAPTCHA v3 / v2-invisible, passive
+// Turnstile). These run inside the page's own submit handler and ask the user
+// for nothing, so they must not block auto-submit.
+const INVISIBLE_CAPTCHA_SELECTORS = ['.grecaptcha-badge', '[data-size="invisible" i]'].join(', ');
 
-  return Array.from(document.querySelectorAll('iframe, img, div, span, p, label')).some((element) => {
-    if (!(element.getClientRects && element.getClientRects().length > 0)) {
+function detectCaptcha(scope) {
+  const root = scope || document;
+  return Array.from(root.querySelectorAll(CAPTCHA_SELECTORS)).some((element) => {
+    if (element.closest(INVISIBLE_CAPTCHA_SELECTORS)) {
       return false;
     }
-    const style = window.getComputedStyle(element);
-    if (style.display === 'none' || style.visibility === 'hidden') {
-      return false;
+
+    if (element instanceof HTMLInputElement) {
+      // A hidden input is only where an invisible captcha drops its token; it is
+      // never a challenge. A visible one is a "type the code" box, and that does
+      // gate submission even before it finishes rendering.
+      return (element.type || '').toLowerCase() !== 'hidden';
     }
-    const text = (element?.textContent || '').toLowerCase();
-    return /captcha|recaptcha|hcaptcha/i.test(text);
+
+    return element.getClientRects().length > 0;
   });
 }
 
@@ -250,10 +260,51 @@ function scoreForm(form) {
   return passwordCount * 10 + textCount;
 }
 
+function isSecureContextForPasswords() {
+  const { protocol, hostname } = window.location;
+  if (protocol === 'https:') {
+    return true;
+  }
+
+  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]' || hostname.endsWith('.localhost');
+}
+
+// Keywords are bounded by non-letters so e.g. "/preset" or "/joint" don't match.
+const REGISTRATION_URL_PATTERN = /(?:^|[^a-z])(sign[-_]?up|signup|register|registration|create[-_]?account|reset|forgot|recover|change[-_]?password|new[-_]?password)(?:[^a-z]|$)|הרשמה/i;
+
+function formHasRegistrationSignals(form) {
+  const scope = form || document;
+
+  if (scope.querySelector('input[autocomplete="new-password"]')) {
+    return true;
+  }
+
+  return getVisiblePasswordFields(scope).length >= 2;
+}
+
+function formLooksLikeRegistrationOrReset(form) {
+  if (formHasRegistrationSignals(form)) {
+    return true;
+  }
+
+  const action = (form && form.getAttribute('action')) || '';
+  return REGISTRATION_URL_PATTERN.test(action) || REGISTRATION_URL_PATTERN.test(window.location.pathname);
+}
+
+function findAutofillTargetForm() {
+  const fields = findBestLoginFields();
+  const passwordField = fields.find((field) => inferFieldType(field) === 'password');
+  return (passwordField || fields[0])?.closest('form') || null;
+}
+
 function findBestLoginFields() {
   const forms = Array.from(document.querySelectorAll('form'));
   const scoredForms = forms
-    .map((form) => ({ form, score: scoreForm(form) }))
+    .map((form) => ({
+      form,
+      // Push registration/reset forms below any plausible login form.
+      score: scoreForm(form) - (formLooksLikeRegistrationOrReset(form) ? 1000 : 0)
+    }))
     .filter((item) => item.score > 0)
     .sort((left, right) => right.score - left.score);
 
@@ -290,49 +341,79 @@ function detectLoginFields() {
   return findBestLoginFields().slice(0, 4).map((field, index) => getFieldDescriptor(field, index));
 }
 
-function findSubmitButton(form) {
-  const submitCandidates = [];
-  if (form) {
-    submitCandidates.push(...Array.from(form.querySelectorAll('button[type="submit"], input[type="submit"]')));
+function findSubmitButton(scope) {
+  if (!scope) {
+    return null;
   }
-  submitCandidates.push(...Array.from(document.querySelectorAll('button[type="submit"], input[type="submit"]')));
-  const byText = Array.from(document.querySelectorAll('button, input[type="button"], input[type="submit"]')).filter((element) => {
-    const text = (element.value || element.textContent || '').trim().toLowerCase();
-    return /login|log in|sign in|continue|submit|כניסה|התחבר|התחברות/.test(text);
-  });
-  submitCandidates.push(...byText);
-  const unique = [];
-  submitCandidates.forEach((element) => {
-    if (!unique.includes(element)) unique.push(element);
-  });
-  return unique[0] || null;
+
+  const direct = scope.querySelector('button[type="submit"], input[type="submit"]');
+  if (direct) {
+    return direct;
+  }
+
+  return (
+    Array.from(scope.querySelectorAll('button, input[type="button"]')).find((element) => {
+      const text = (element.value || element.textContent || '').trim().toLowerCase();
+      return /login|log in|sign in|continue|submit|כניסה|התחבר|התחברות/.test(text);
+    }) || null
+  );
 }
 
-function submitForm(targetField) {
-  const form = targetField?.closest('form') || null;
-  const submitButton = findSubmitButton(form);
+function closestCommonContainer(elements) {
+  let node = elements[0]?.parentElement || null;
+  while (node && !elements.every((element) => node.contains(element))) {
+    node = node.parentElement;
+  }
 
+  return node;
+}
+
+// For logins without a <form> (sites that submit via script): search the
+// filled fields' common container, then a few ancestors, for a submit control.
+function findFormlessSubmitButton(elements) {
+  let scope = closestCommonContainer(elements);
+  for (let level = 0; scope && scope !== document.documentElement; level += 1) {
+    const button = findSubmitButton(scope);
+    if (button) {
+      return button;
+    }
+
+    if (level >= 4) {
+      break;
+    }
+
+    scope = scope.parentElement;
+  }
+
+  return null;
+}
+
+function pressEnter(field) {
+  const options = { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true };
+  field.dispatchEvent(new KeyboardEvent('keydown', options));
+  field.dispatchEvent(new KeyboardEvent('keypress', options));
+  field.dispatchEvent(new KeyboardEvent('keyup', options));
+}
+
+function submitForm(form) {
+  if (!form) {
+    return false;
+  }
+
+  const submitButton = findSubmitButton(form);
   if (submitButton) {
     submitButton.click();
     return true;
   }
 
-  if (form && typeof form.requestSubmit === 'function') {
+  if (typeof form.requestSubmit === 'function') {
     form.requestSubmit();
     return true;
   }
 
-  if (form) {
-    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
-    if (typeof form.submit === 'function') {
-      form.submit();
-      return true;
-    }
-  }
-
-  if (targetField) {
-    targetField.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
-    targetField.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
+  form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+  if (typeof form.submit === 'function') {
+    form.submit();
     return true;
   }
 
@@ -404,11 +485,28 @@ function hasVisibleLoginFields() {
   return Boolean(getFastPasswordCandidate(document)) && getFastTextCandidates(document).length > 0;
 }
 
+function ruleHasPasswordValue(rule) {
+  return Boolean(rule?.fields?.some((field) => field.type === 'password' && (field.value || field.secretRef)));
+}
+
 function shouldAttemptAutoFill(rule) {
+  if (ruleHasPasswordValue(rule) && !isSecureContextForPasswords()) {
+    return false;
+  }
+
   const savedLoginPagePath = normalizePathname(rule?.loginPagePath);
+  if (savedLoginPagePath && normalizePathname(window.location.pathname) !== savedLoginPagePath) {
+    return false;
+  }
 
   if (savedLoginPagePath) {
-    return normalizePathname(window.location.pathname) === savedLoginPagePath;
+    // The user pinned this path, so only hard DOM signals (a registration or
+    // password-change form) may still veto the fill.
+    return !formHasRegistrationSignals(findAutofillTargetForm());
+  }
+
+  if (formLooksLikeRegistrationOrReset(findAutofillTargetForm())) {
+    return false;
   }
 
   if (hasVisibleLoginFields()) {
@@ -485,32 +583,39 @@ function fillLoginForm(payload) {
     submitted: false
   };
 
-  const requestedFields = normalizeIncomingFields(payload).filter((field) => field.value);
-  const candidateFields = findBestLoginFields();
-  const shouldCheckAutoSubmitSafety = Boolean(payload?.autoSubmit);
-  const hasOtp = shouldCheckAutoSubmitSafety ? Array.from(document.querySelectorAll('input')).some((field) => isVisibleField(field) && looksLikeOtpField(field)) : false;
-  const hasCaptcha = shouldCheckAutoSubmitSafety ? detectCaptcha() : false;
-  const ambiguousForms = shouldCheckAutoSubmitSafety ? detectAmbiguousForms() : false;
-  const detectedDescriptors = candidateFields.map((field, index) => ({
-    element: field,
-    ...getFieldDescriptor(field, index)
-  }));
-  const availableFields = [...detectedDescriptors];
-  const passwordField = candidateFields.find((field) => inferFieldType(field) === 'password') || null;
-  let lastFilledField = null;
+  const insecure = !isSecureContextForPasswords();
+  const savedFieldsWithValues = normalizeIncomingFields(payload).filter((field) => field.value);
+  const requestedFields = insecure
+    ? savedFieldsWithValues.filter((field) => field.type !== 'password')
+    : savedFieldsWithValues;
+  const droppedInsecurePasswords = savedFieldsWithValues.length - requestedFields.length;
 
+  if (!requestedFields.length) {
+    result.message = droppedInsecurePasswords
+      ? 'Password autofill is disabled on insecure (HTTP) pages.'
+      : 'No saved values to fill.';
+    return result;
+  }
+
+  const candidateFields = findBestLoginFields();
   if (!candidateFields.length) {
     result.message = 'No login form could be identified.';
     return result;
   }
 
+  const availableFields = candidateFields.map((field, index) => ({
+    element: field,
+    ...getFieldDescriptor(field, index)
+  }));
+
   result.totalFields = requestedFields.length;
 
+  const filledEntries = [];
   requestedFields.forEach((savedField) => {
     const targetField = matchRequestedField(savedField, availableFields);
     if (targetField?.element && setFieldValue(targetField.element, savedField.value)) {
       result.matchedFields += 1;
-      lastFilledField = targetField.element;
+      filledEntries.push({ element: targetField.element, savedField });
     }
   });
 
@@ -519,23 +624,72 @@ function fillLoginForm(payload) {
     return result;
   }
 
-  if (hasCaptcha || hasOtp || ambiguousForms) {
-    result.message = 'Safety checks blocked automatic submission.';
-    result.ok = true;
+  result.ok = true;
+  result.message = droppedInsecurePasswords
+    ? 'Filled non-password fields; password autofill is disabled on insecure (HTTP) pages.'
+    : 'Filled the form.';
+
+  if (!payload?.autoSubmit) {
     return result;
   }
 
-  if (payload?.autoSubmit && requestedFields.length > 0) {
-    if (submitForm(passwordField || lastFilledField || candidateFields[candidateFields.length - 1] || null)) {
-      result.submitted = true;
-      result.ok = true;
-      result.message = 'Filled and submitted the form.';
-      return result;
-    }
+  if (insecure) {
+    result.message = 'Filled the form. Auto-submit is disabled on insecure (HTTP) pages.';
+    return result;
   }
 
-  result.ok = true;
-  result.message = 'Filled the form.';
+  // Auto-submit requires a filled username-like field and a filled password
+  // field that belong together — the same <form>, or for script-driven logins
+  // without a <form>, the same page container.
+  const filledPasswordEntry = filledEntries.find((entry) => entry.savedField.type === 'password');
+  const filledTextEntry = filledEntries.find((entry) => entry.savedField.type !== 'password');
+
+  if (!filledPasswordEntry || !filledTextEntry) {
+    result.message = 'Filled the form. Auto-submit needs both a username and a password.';
+    return result;
+  }
+
+  const targetForm = filledPasswordEntry.element.closest('form') || null;
+  const filledElements = filledEntries.map((entry) => entry.element);
+  const submitScope = targetForm || closestCommonContainer(filledElements);
+
+  if (targetForm && !filledElements.every((element) => targetForm.contains(element))) {
+    result.message = 'Filled the form. Auto-submit needs the username and password inside a single form.';
+    return result;
+  }
+
+  if (formHasRegistrationSignals(submitScope)) {
+    result.message = 'Filled the form. Auto-submit is disabled on registration and password-change forms.';
+    return result;
+  }
+
+  const hasOtp = Array.from(submitScope?.querySelectorAll('input') || []).some(
+    (field) => isVisibleField(field) && looksLikeOtpField(field)
+  );
+  if (hasOtp || detectCaptcha(submitScope) || detectAmbiguousForms()) {
+    result.message = 'Filled the form. Safety checks blocked automatic submission.';
+    return result;
+  }
+
+  if (targetForm) {
+    if (submitForm(targetForm)) {
+      result.submitted = true;
+      result.message = 'Filled and submitted the form.';
+    }
+    return result;
+  }
+
+  const formlessButton = findFormlessSubmitButton(filledElements);
+  if (formlessButton) {
+    formlessButton.click();
+    result.submitted = true;
+    result.message = 'Filled and submitted the form.';
+    return result;
+  }
+
+  pressEnter(filledPasswordEntry.element);
+  result.submitted = true;
+  result.message = 'Filled the form and pressed Enter to submit.';
   return result;
 }
 
@@ -558,7 +712,7 @@ function beginAutoFillForCurrentPage() {
     tryAutoFill(rule);
 
     if (!autofillStopped && autofillAttemptCount < MAX_AUTOFILL_ATTEMPTS) {
-      scheduleSecondAttempt();
+      scheduleRetryAttempts();
     }
 
     setupMutationObserver();
@@ -650,20 +804,47 @@ function normalizeStoredRule(hostname, rule) {
         label: field?.label || `Field ${index + 1}`,
         value: String(field?.value || ''),
         type: field?.type === 'password' ? 'password' : 'text',
-        meaning: field?.meaning || (field?.type === 'password' ? 'password' : `text-${index + 1}`)
+        meaning: field?.meaning || (field?.type === 'password' ? 'password' : `text-${index + 1}`),
+        secretRef: String(field?.secretRef || '')
       }))
     : [
-        { id: 'username', label: 'Username or email', value: rule.username || '', type: 'text', meaning: 'username' },
-        { id: 'password', label: 'Password', value: rule.password || '', type: 'password', meaning: 'password' }
+        { id: 'username', label: 'Username or email', value: rule.username || '', type: 'text', meaning: 'username', secretRef: '' },
+        { id: 'password', label: 'Password', value: rule.password || '', type: 'password', meaning: 'password', secretRef: '' }
       ];
 
   return {
     hostname,
     fields,
     loginPagePath: String(rule.loginPagePath || '').trim(),
-    autoFill: Boolean(rule.autoFill),
-    autoSubmit: Boolean(rule.autoSubmit)
+    // Auto-fill and auto-submit are built-in behavior, not user settings;
+    // older stored rules may still carry false here.
+    autoFill: true,
+    autoSubmit: true
   };
+}
+
+function ruleNeedsSecretResolution(rule) {
+  return Boolean(rule?.fields?.some((field) => field.secretRef && !field.value));
+}
+
+async function resolveRuleSecrets(rule) {
+  if (!ruleNeedsSecretResolution(rule)) {
+    return rule;
+  }
+
+  try {
+    const refs = rule.fields.filter((field) => field.secretRef && !field.value).map((field) => field.secretRef);
+    const response = await browserApi.runtime.sendMessage({ type: 'RESOLVE_SECRETS', refs });
+    const values = response?.values || {};
+    return {
+      ...rule,
+      fields: rule.fields.map((field) =>
+        field.secretRef && !field.value ? { ...field, value: values[field.secretRef] || '' } : field
+      )
+    };
+  } catch (_error) {
+    return rule;
+  }
 }
 
 function loadRuleFromStorage(hostname) {
@@ -671,6 +852,7 @@ function loadRuleFromStorage(hostname) {
   return browserApi.storage.local
     .get('sites')
     .then((result) => normalizeStoredRule(normalized, (result.sites || {})[normalized] || null))
+    .then((rule) => (rule?.autoFill ? resolveRuleSecrets(rule) : rule))
     .catch(() => null);
 }
 
@@ -744,21 +926,23 @@ function setupMutationObserver() {
   });
 }
 
-function scheduleSecondAttempt() {
+function scheduleRetryAttempts() {
   if (autofillStopped || autofillAttemptCount >= MAX_AUTOFILL_ATTEMPTS) {
     return;
   }
 
   clearRetryTimers();
-  const timer = window.setTimeout(async () => {
-    if (autofillStopped || autofillAttemptCount >= MAX_AUTOFILL_ATTEMPTS) {
-      return;
-    }
+  AUTOFILL_RETRY_DELAYS.forEach((delay) => {
+    const timer = window.setTimeout(async () => {
+      if (autofillStopped || autofillAttemptCount >= MAX_AUTOFILL_ATTEMPTS) {
+        return;
+      }
 
-    await autoFillIfEnabled();
-  }, AUTOFILL_SECOND_ATTEMPT_DELAY);
+      await autoFillIfEnabled();
+    }, delay);
 
-  retryTimers.push(timer);
+    retryTimers.push(timer);
+  });
 }
 
 browserApi.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -782,7 +966,7 @@ browserApi.runtime.onMessage.addListener((message, sender, sendResponse) => {
     updateCachedRule(window.location.hostname, rule);
     const outcome = tryAutoFill(rule, { manual: true });
     if (!outcome.success && !autofillStopped && autofillAttemptCount < MAX_AUTOFILL_ATTEMPTS) {
-      scheduleSecondAttempt();
+      scheduleRetryAttempts();
       setupMutationObserver();
     }
     sendResponse(outcome);
@@ -798,6 +982,10 @@ browserApi.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return false;
 });
 
+function requestToolbarIconRefresh() {
+  browserApi.runtime.sendMessage({ type: 'REFRESH_TOOLBAR_ICON' }).catch(() => {});
+}
+
 browserApi.storage.onChanged.addListener((changes, areaName) => {
   if (areaName !== 'local' || !changes.sites) {
     return;
@@ -805,16 +993,18 @@ browserApi.storage.onChanged.addListener((changes, areaName) => {
 
   const hostname = window.location.hostname.toLowerCase().trim();
   const sites = changes.sites.newValue || {};
-  const rule = normalizeStoredRule(hostname, sites[hostname] || null);
 
-  if (!rule) {
+  requestToolbarIconRefresh();
+
+  if (!sites[hostname]) {
     invalidateRuleCache();
     resetAutoFillSession();
     stopAutoFill();
     return;
   }
 
-  updateCachedRule(hostname, rule);
+  // Reload through loadRuleFromStorage so Keychain-backed secrets get resolved.
+  invalidateRuleCache();
   resetAutoFillSession();
   beginAutoFillForCurrentPage();
 });
@@ -827,6 +1017,8 @@ function bootAutoFill() {
     cachedRule = rule;
     return rule;
   });
+
+  requestToolbarIconRefresh();
 
   const start = () => beginAutoFillForCurrentPage();
 

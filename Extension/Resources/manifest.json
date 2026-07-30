@@ -3,7 +3,7 @@
   "name": "AutoLogin",
   "description": "A transparent, user-controlled autofill helper for Safari web extensions.",
   "version": "0.1.2",
-  "permissions": ["activeTab", "storage", "tabs"],
+  "permissions": ["activeTab", "storage", "nativeMessaging"],
   "host_permissions": [],
   "commands": {
     "_execute_action": {
@@ -15,7 +15,7 @@
   },
   "action": {
     "default_title": "AutoLogin",
-    "default_icon": "images/toolbar-icon-inactive.svg",
+    "default_icon": "images/toolbar-icon.svg",
     "default_popup": "popup.html"
   },
   "icons": {
@@ -35,12 +35,6 @@
       "matches": ["<all_urls>"],
       "js": ["content.js"],
       "run_at": "document_start"
-    }
-  ],
-  "web_accessible_resources": [
-    {
-      "resources": ["styles.css"],
-      "matches": ["<all_urls>"]
     }
   ]
 }

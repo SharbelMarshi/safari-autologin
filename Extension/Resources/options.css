@@ -1,0 +1,437 @@
+/* macOS System Settings–style appearance for the options page. */
+
+:root {
+  color-scheme: light dark;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+  --window-bg: #f2f2f2;
+  --card-bg: #ffffff;
+  --card-border: rgba(0, 0, 0, 0.06);
+  --hairline: rgba(0, 0, 0, 0.08);
+  --text-primary: rgba(0, 0, 0, 0.85);
+  --text-secondary: rgba(0, 0, 0, 0.5);
+  --control-bg: #ffffff;
+  --control-border: rgba(0, 0, 0, 0.18);
+  --control-shadow: 0 0.5px 1px rgba(0, 0, 0, 0.12);
+  --row-hover: rgba(0, 0, 0, 0.035);
+  --accent: #007aff;
+  --accent-pressed: #0064d2;
+  --destructive: #ff3b30;
+  --focus-ring: rgba(0, 122, 255, 0.35);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --window-bg: #262626;
+    --card-bg: #323232;
+    --card-border: rgba(255, 255, 255, 0.05);
+    --hairline: rgba(255, 255, 255, 0.1);
+    --text-primary: rgba(255, 255, 255, 0.85);
+    --text-secondary: rgba(255, 255, 255, 0.55);
+    --control-bg: #656565;
+    --control-border: rgba(255, 255, 255, 0.08);
+    --control-shadow: 0 0.5px 1.5px rgba(0, 0, 0, 0.4);
+    --row-hover: rgba(255, 255, 255, 0.05);
+    --accent: #0a84ff;
+    --accent-pressed: #0060df;
+    --destructive: #ff453a;
+    --focus-ring: rgba(10, 132, 255, 0.4);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background: var(--window-bg);
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 1.35;
+  -webkit-font-smoothing: antialiased;
+}
+
+.options {
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 24px 20px 40px;
+}
+
+.options-shell {
+  display: grid;
+  gap: 14px;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+/* Header */
+
+.options-topbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.options-heading h1 {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.options-subtitle {
+  margin-top: 1px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.popup-divider {
+  display: none;
+}
+
+/* Buttons — macOS push buttons */
+
+button {
+  appearance: none;
+  font: inherit;
+  font-size: 13px;
+  color: var(--text-primary);
+  min-height: 24px;
+  padding: 3px 12px;
+  border: 1px solid var(--control-border);
+  border-radius: 6px;
+  background: var(--control-bg);
+  box-shadow: var(--control-shadow);
+  cursor: default;
+}
+
+button:active {
+  filter: brightness(0.93);
+}
+
+@media (prefers-color-scheme: dark) {
+  button:active {
+    filter: brightness(1.15);
+  }
+}
+
+button.primary,
+#saveEditor {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 88%, #ffffff), var(--accent));
+  border-color: transparent;
+  color: #ffffff;
+}
+
+button.primary:active,
+#saveEditor:active {
+  background: var(--accent-pressed);
+  filter: none;
+}
+
+button.danger,
+#deleteEditor {
+  color: var(--destructive);
+}
+
+button.confirming,
+button.confirming:active {
+  background: var(--destructive);
+  border-color: transparent;
+  color: #ffffff;
+  filter: none;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* Status line */
+
+.status,
+#optionsStatus {
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.status-error {
+  color: var(--destructive);
+}
+
+/* Grouped cards */
+
+.site-list,
+.editor-panel,
+.empty-state {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+/* Site list rows */
+
+.site-list {
+  display: block;
+}
+
+.site-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 9px 14px;
+}
+
+.site-row + .site-row {
+  border-top: 1px solid var(--hairline);
+}
+
+.site-row:hover {
+  background: var(--row-hover);
+}
+
+.site-row-copy {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.site-row-title {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.rule-meta {
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.site-menu-button {
+  min-height: 22px;
+  width: 26px;
+  padding: 0 0 2px;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-size: 16px;
+  line-height: 1;
+}
+
+.site-menu-button:hover {
+  background: var(--row-hover);
+  color: var(--text-primary);
+}
+
+/* Empty state */
+
+.empty-state {
+  padding: 28px 16px;
+  text-align: center;
+}
+
+.empty-state h2 {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.empty-state p {
+  margin-top: 3px;
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+/* Editor card */
+
+.editor-panel {
+  display: grid;
+  gap: 0;
+  padding: 0;
+}
+
+.editor-header {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.editor-header .options-subtitle {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.editor-header h2 {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.rule-fields {
+  display: grid;
+  gap: 0;
+  padding: 4px 0;
+}
+
+.field-group {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  padding: 7px 14px;
+}
+
+.field-group + .field-group {
+  border-top: 1px solid var(--hairline);
+}
+
+.field-label,
+.field-group > label,
+.field-group > span:first-child {
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 400;
+  text-align: right;
+}
+
+.editor-panel > .field-group {
+  border-top: 1px solid var(--hairline);
+}
+
+.add-field-button {
+  margin: 6px 14px 10px;
+  width: calc(100% - 28px);
+  color: var(--accent);
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  text-align: left;
+  padding-left: 0;
+}
+
+.add-field-button:hover {
+  text-decoration: underline;
+}
+
+.field-help {
+  padding: 8px 14px;
+  border-top: 1px solid var(--hairline);
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.rule-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding: 10px 14px;
+  border-top: 1px solid var(--hairline);
+}
+
+.rule-status {
+  padding: 0 14px 10px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  text-align: right;
+}
+
+/* Inputs */
+
+input[type="text"],
+input[type="password"],
+input[type="email"] {
+  width: 100%;
+  font: inherit;
+  font-size: 13px;
+  min-height: 24px;
+  padding: 3px 8px;
+  color: var(--text-primary);
+  background: var(--control-bg);
+  border: 1px solid var(--control-border);
+  border-radius: 6px;
+  box-shadow: var(--control-shadow);
+}
+
+@media (prefers-color-scheme: dark) {
+  input[type="text"],
+  input[type="password"],
+  input[type="email"] {
+    background: rgba(255, 255, 255, 0.06);
+  }
+}
+
+input::placeholder {
+  color: var(--text-secondary);
+}
+
+input:focus {
+  outline: none;
+  border-color: transparent;
+  box-shadow: 0 0 0 3.5px var(--focus-ring);
+}
+
+/* Password reveal button */
+
+.password-input-wrap {
+  position: relative;
+  display: block;
+}
+
+.password-input-wrap input {
+  padding-right: 48px;
+}
+
+.reveal-button,
+.reveal-button:hover,
+.reveal-button:active {
+  position: absolute;
+  right: 3px;
+  top: 50%;
+  transform: translateY(-50%);
+  min-height: 18px;
+  padding: 1px 7px;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-secondary);
+  font-size: 11px;
+  filter: none;
+}
+
+.reveal-button:hover {
+  color: var(--text-primary);
+  background: var(--row-hover);
+}
+
+.hidden {
+  display: none !important;
+}
+
+@media (max-width: 560px) {
+  .options-topbar {
+    grid-template-columns: 1fr;
+  }
+
+  .field-group {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .field-label,
+  .field-group > label,
+  .field-group > span:first-child {
+    text-align: left;
+  }
+}

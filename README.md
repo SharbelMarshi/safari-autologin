@@ -6,8 +6,9 @@ A transparent, user-controlled autofill helper for Safari on macOS. Save login c
 
 ### Per-site credentials
 - Save username, password, and additional custom fields for any website
-- Credentials are stored locally on your device in Safari extension storage — nothing is sent to a server
+- Passwords are stored in the **macOS Keychain**; extension storage only keeps opaque references — nothing is sent to a server
 - Edit or delete saved sites anytime from the settings page
+- Optionally pin a rule to an exact login page path so it never fills elsewhere
 
 ### Smart form detection
 - Automatically detects login fields on the current page when you open the popup
@@ -15,14 +16,15 @@ A transparent, user-controlled autofill helper for Safari on macOS. Save login c
 - Handles single-page app navigation (URL changes without a full reload)
 
 ### Auto-fill and auto-submit
-- **Auto-fill** — fills saved credentials when a matching page loads
-- **Auto-submit** — optionally submits the form after fields are filled
+Filling and signing in are built in — there is nothing to configure:
+- Saved credentials are filled automatically when a matching login page loads
+- The form is then submitted automatically, but only when a username and a password were both filled inside one and the same form
 - Applies saved rules immediately on open tabs without requiring a page reload
-- Limits autofill to two attempts per page load to avoid repeated retries on slow sites
+- Retries with a short bounded backoff so late-rendering login forms still get filled
 
 ### Safety checks
-Auto-submit is blocked when the extension detects:
-- CAPTCHA challenges (reCAPTCHA, hCaptcha, etc.)
+Password autofill is refused on plain-HTTP pages and on registration or password-change forms. Auto-submit is additionally blocked when the extension detects:
+- CAPTCHA challenges (reCAPTCHA, hCaptcha, Turnstile, etc.)
 - OTP, 2FA, or one-time-code fields
 - Ambiguous pages with multiple competing login forms
 
@@ -33,7 +35,7 @@ Auto-submit is blocked when the extension detects:
 
 ### Settings page
 - View all saved sites in one place
-- Edit credentials, toggle auto-fill and auto-submit, or delete individual sites
+- Edit credentials, adjust the login page path, or delete individual sites
 - Clear all saved sites or reset all extension data
 
 ### macOS companion app
@@ -45,8 +47,8 @@ Auto-submit is blocked when the extension detects:
 1. Open `AutoLogin.xcodeproj` in Xcode and build the project (**Cmd+R**)
 2. In Safari, go to **Settings → Extensions** and enable **AutoLogin**
 3. Grant the extension permission for the websites you want to use it on
-4. Click the toolbar icon on a login page, enter your credentials, and tap **Save Passkey**
+4. Click the toolbar icon on a login page, enter your credentials, and tap **Save Credentials**
 
 ## Privacy
 
-All site rules and credentials stay in `browser.storage.local` on your Mac. AutoLogin does not sync, upload, or share your data.
+Site rules stay in `browser.storage.local` on your Mac; passwords live in the macOS Keychain, keyed by opaque ids. AutoLogin does not sync, upload, or share your data. (The companion app keeps the sandbox network-client entitlement only because WKWebView requires it to render the onboarding page.)

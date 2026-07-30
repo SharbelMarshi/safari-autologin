@@ -10,32 +10,21 @@
     <main class="popup">
       <section class="popup-shell">
         <h1>AUTOLOGIN</h1>
+        <p id="popupContext" class="field-help"></p>
 
         <div class="popup-divider"></div>
+
+        <p id="popupStatus" class="status hidden" aria-live="polite"></p>
 
         <div id="fieldList" class="field-list"></div>
         <button id="addField" class="secondary add-field-button" type="button">+ Add Another Field</button>
 
-        <label class="switch-row">
-          <span>
-            <strong>Auto-fill</strong>
-            <small>Use saved credentials when this page loads.</small>
-          </span>
-          <input id="autoFill" type="checkbox" />
-        </label>
-
-        <label class="switch-row">
-          <span>
-            <strong>Auto-submit</strong>
-            <small>Only after both fields are filled safely.</small>
-          </span>
-          <input id="autoSubmit" type="checkbox" />
-        </label>
-
         <div class="popup-divider"></div>
 
+        <p class="field-help">Fills and signs in automatically when you visit this site's login page.</p>
+
         <div class="actions">
-          <button id="save">Save Passkey</button>
+          <button id="save">Save Credentials</button>
         </div>
       </section>
     </main>
